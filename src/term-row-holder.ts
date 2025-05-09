@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import type { TermRow } from './term-row'; // Ensure TermRow is exported from term-row.js
 import type { CompoundButton } from './compound-button'; // Ensure CompoundButton is exported from compound-button.js
+import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 
 /**
  * <term-row-holder>
@@ -55,7 +56,7 @@ export class TermRowHolder extends LitElement {
   }
 
   getContainer() {
-    return this.querySelector('.rows')
+    return this.shadowRoot?.querySelector('.rows');
   }
 
   dehydrate() {

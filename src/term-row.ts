@@ -1,6 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import './compound-button.js';
-import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
+import './compound-button';
 
 /**
  * <term-row>
@@ -13,12 +12,13 @@ import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
  *     populates the row with terms and sets all child buttons to 'checked' if selected=true, else 'unchecked'.
  */
 export class TermRow extends LitElement {
-    terms: Record<string, { term: string; state: string; matchCount: number; isSelected: boolean }> = {};
+  terms!: Record<string, any>;
+  // terms: { term: string, state: string, isSelected: false, matchCount: 0 }[] = [];
 
-  static properties = {
-    /** The array of terms to render */
-    terms: { type: Object },
-  };
+  // static properties = {
+  //   /** The array of terms to render */
+  //   terms: { type: Object },
+  // };
 
   static styles = css`
     :host {
@@ -49,6 +49,7 @@ export class TermRow extends LitElement {
 
   constructor() {
     super();
+    this.terms = {};
   }
 
   render() {
@@ -148,6 +149,9 @@ hydrate(terms: Record<string, { term: string; state: string; matchCount: number;
     if (this.terms[term]) {
       return;
     }
+    if (!term) {
+      return;
+    }
     const myTerms = Object.values(this.terms).map(obj => obj.term);
     if (term.startsWith(myTerms[0])) {
       delete this.terms[term];
@@ -214,7 +218,9 @@ hydrate(terms: Record<string, { term: string; state: string; matchCount: number;
    */
   setTerms(termList: string[], checked = false) {
     termList.forEach(term => {
-      this.terms[term] = { term: term, state: checked ? 'checked' : 'unchecked', isSelected: false, matchCount: 0 };
+      if (term) {
+        this.terms[term] = { term: term, state: checked ? 'checked' : 'unchecked', isSelected: false, matchCount: 0 };
+      }
     });
     this.requestUpdate();
   }

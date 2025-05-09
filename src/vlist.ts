@@ -17,7 +17,7 @@ function getValue(key: string) {
 
 export class VirtualizedList {
     containerName: string;
-    itemRenderer: (index: number, query: string, element: HTMLElement | null) => HTMLElement;
+    itemRenderer: ((index: number, query: any, incomingItem: HTMLElement | null) => HTMLElement) | null = null;
     totalItems: number;
     rowHeight: number;
     buffer: number;
@@ -30,7 +30,7 @@ export class VirtualizedList {
     ticking: boolean = false;
 
     constructor(containerName: string, 
-        itemRenderer: (index: number, query: string, element: HTMLElement | null) => HTMLElement, 
+        itemRenderer: ((index: number, query: any, incomingItem: HTMLElement | null) => HTMLElement) | null = null, 
         totalItems: number, 
         rowHeight: number, 
         query: string, 
@@ -102,6 +102,7 @@ export class VirtualizedList {
     }
 
     prepVisibleItem(index: number) {
+        if (!this.itemRenderer) { return null; }
         const itemElement = this.itemRenderer(index, this.query, null); // Create item via callback
         if (!itemElement) {
             console.error('VirtualizedList: itemRenderer returned null for index:', index);
@@ -124,6 +125,7 @@ export class VirtualizedList {
         //     this.itemRenderer(0, this.query);  // Force a fetch of the first item (if any) to get the actual item count.
         //     return;
         // }
+        if (this.itemRenderer == null) { return ; }
         const queryRetryDelay = 2 * 1000;
         const { startIndex, endIndex } = this.calculateVisibleRange();
         // Add new items to the DOM
@@ -183,7 +185,7 @@ export class VirtualizedList {
 
     updateItemCount(count: number) {
         try {
-            const wrapperId = this.listName + '-scroll-area-wrapper';
+            const wrapperId = 'scroll-area-wrapper';
             const wrapper = document.getElementById(wrapperId);
             if (!wrapper) {
                 console.error('VirtualizedList: wrapper is null', wrapperId);

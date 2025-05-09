@@ -1,10 +1,12 @@
 import './style.css'
 // Import Shoelace components
-import '@shoelace-style/shoelace/dist/components/button/button.js';
-import '@shoelace-style/shoelace/dist/themes/light.css';
+// import '@shoelace-style/shoelace/dist/themes/light.css';
+// import '@shoelace-style/shoelace/dist/shoelace.js';
 // Optionally register all Shoelace components at once
-// import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.js';
-// setBasePath('/node_modules/@shoelace-style/shoelace/dist/');
+import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.js';
+setBasePath('/node_modules/@shoelace-style/shoelace/dist/');
+import '@shoelace-style/shoelace/dist/themes/light.css';
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 
 // Import noUiSlider
 import 'nouislider/dist/nouislider.css';
@@ -19,10 +21,10 @@ import { VirtualizedList } from './vlist';
 const fetchUrl = 'https://ocf23hr7gvdwnjvqjdxkyfn72q0krmpf.lambda-url.eu-west-1.on.aws/'; // Default URL
 
 const fetchUrls = [
-  { url: 'https://ocf23hr7gvdwnjvqjdxkyfn72q0krmpf.lambda-url.eu-west-1.on.aws/', region: 'Ireland', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
-  { url: 'https://ag7chsk5zm74er3oatpdh6j24m0koppw.lambda-url.us-east-2.on.aws/', region: 'Ohio', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
-  { url: 'https://73jo4qs6ly7d3yvmtau6ueh2vi0nwqwd.lambda-url.eu-west-2.on.aws/', region: 'London', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
-  { url: 'https://xfpv2livbazgnqjp4gfjc4rlia0pgfey.lambda-url.us-west-2.on.aws/', region: 'Oregon', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+  { url: 'https://7xadmewddfcppw5lweztbzlv2u0wxcvk.lambda-url.eu-west-1.on.aws/', region: 'Ireland', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+//   { url: 'https://ag7chsk5zm74er3oatpdh6j24m0koppw.lambda-url.us-east-2.on.aws/', region: 'Ohio', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+//   { url: 'https://73jo4qs6ly7d3yvmtau6ueh2vi0nwqwd.lambda-url.eu-west-2.on.aws/', region: 'London', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+//   { url: 'https://xfpv2livbazgnqjp4gfjc4rlia0pgfey.lambda-url.us-west-2.on.aws/', region: 'Oregon', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
 ];
 
 let pendingQueries: { [key: string]: any } = {};
@@ -58,11 +60,9 @@ function loadPage(url: string, newTab = false) {
 function highlightSnippet(snippet: string | null): string {
   try {
       if (snippet) {
-          let s = snippet.replace(/<em>/g, '<span class="jviewer-snippet-emphasis">');
+          let s = snippet.replace(/<em>/g, '<span class="emphasis">');
           let s2 = s.replace(/<\/em>/g, '</span>');
-          let s3 = s2.replace(/< em >/g, '<span class="jviewer-snippet-emphasis">');
-          let s4 = s3.replace(/<\/ em >/g, '</span>');
-          let snip = '<span class="jviewer-snippet">' + s4 + '</span>';
+          let snip = '<span class="snippet">' + s2 + '</span>';
           return snip;
       } else {
           return "";
@@ -87,7 +87,7 @@ class DoubleSlider extends HTMLElement {
       // this.shadowRoot.appendChild(div);
       this.appendChild(div);
       const currentYear = new Date().getFullYear();
-      const minYear = 1984;
+      const minYear = 1857;
       const slider = noUiSlider.create(div, {
           start: [minYear, currentYear],
           tooltips: [wNumb({ decimals: 0 }), wNumb({ decimals: 0 })],
@@ -142,7 +142,7 @@ class SearchElement extends HTMLElement {
       </div>
         `;
 
-        const debouncedHandleInputChange = debounce(this.handleInputChange, 400);
+        const debouncedHandleInputChange = debounce((e) => this.handleInputChange(e), 400);
 
       // Attach a single event listener to the parent div
       this.querySelectorAll('sl-input').forEach(input => {
@@ -168,7 +168,8 @@ class SearchElement extends HTMLElement {
 
   getSearchString(): string {
     const searchString = sessionStorage.getItem('searchString');
-    return searchString || '';
+    const result = searchString || '';
+    return result;
   }
 
   setSearchString(s: string) {
@@ -203,7 +204,7 @@ customElements.define('search-element', SearchElement);
 class TermNavigator extends HTMLElement {
   searchElement: SearchElement;
   termRowHolder: TermRowHolder;
-  scrollAreaName: string = '';
+  scrollAreaName: string = 'scroll-area';
   scrollArea: HTMLElement | null = null;
   vListRenderCallback: ((index: number, query: any, incomingItem: HTMLElement | null) => HTMLElement) | null = null;
   listCache: VirtualizedList | null = null;
@@ -258,7 +259,7 @@ class TermNavigator extends HTMLElement {
       resultList.innerHTML = `
       <div class="scroll-area-wrapper" id="scroll-area-wrapper">
           <div class="jviewer-item-count">0 Items</div>
-          <div id="-scroll-area" class="scroll-area full-height-scroll-area">
+          <div id="scroll-area" class="scroll-area full-height-scroll-area">
               <ul id="list" class="hyperlist">
               </ul>
           </div>
@@ -272,8 +273,6 @@ class TermNavigator extends HTMLElement {
 
   initialize() {
       this.searchElement.initialize();
-      this.scrollAreaName = 'scroll-area';
-      console.log('scrollAreaName:', this.scrollAreaName);
       this.scrollArea = document.getElementById(this.scrollAreaName);
       if (!this.scrollArea) {
           console.error('Scroll area not found:', this.scrollAreaName);
@@ -292,14 +291,11 @@ class TermNavigator extends HTMLElement {
           getRecord(query, index, (record: any) => {
               if (record) {
                   const date = record.date;
-                  let dateString = '<no date>';
-                  if (date > 0) {
-                      dateString = '<span class="date">' + (new Date(date * 1000).toISOString().split('T')[0]) + '</span>';
-                  }
-                  const title = '<span class="wiki-category-name"> ' + record.collection + ' </span>' + dateString + ' <span class="jviewer-title">' + record.title + '</span>';
+                  const dateString = '<span class="date">' + (new Date(date * 1000).toISOString().split('T')[0]) + '</span>';
+                  const title = dateString + ' <span class="atlantic-title">' + record.title + '</span>';
                   const snip = highlightSnippet(record.snip);
                   item.textContent = '';
-                  item.innerHTML = title + snip;
+                  item.innerHTML = title + ' ' + snip;
                   item.title = '    Ctrl/Cmd-Click to open...\n' + record.link + '\n    ...in a new tab.';
                   item.addEventListener('click', (event) => {
                       if (event.ctrlKey || event.metaKey || event.button === 1) { // Check if Ctrl key (or Cmd key on macOS) is pressed
@@ -320,8 +316,8 @@ class TermNavigator extends HTMLElement {
   }
 
   async connectedCallback() {
-      await this.initialize();
-      await this.handleChange();
+      this.initialize();
+      this.handleChange();
   }
 
   setDateRange(startDateSeconds: number, endDateSeconds: number) {
@@ -364,7 +360,7 @@ class TermNavigator extends HTMLElement {
       } else {
           console.error('termRowHolder is not initialized.');
       }
-      this.searchElement.setSearchString(memento.searchString);
+      this.searchElement.setSearchString(memento.searchElement);
       this.handleChange();
   }
 
@@ -514,8 +510,7 @@ function processNewlyArrivedData(query: any, blockIndex: number, response: any) 
 }
 
 function getQueryTotal(query: any, callback: (response: any) => void) {
-  const response = fetchBlockCount(query, callback);
-  return response;
+  fetchBlockCount(query, callback);
 }
 
 function getRecord(query: any, index: number, sendResponse: (response: any) => void) {
@@ -640,13 +635,13 @@ async function updateServerLabel() {
    -------------------------------------------------------------------------- */
 
 // Store total count of records for a query
-async function setTotal(query: any, total: number) {
+function setTotal(query: any, total: number) {
   const queryKey = normalizeQuery(query);
   sessionStorage.setItem(queryKey, JSON.stringify(total));
 }
 
 // Retrieve total count for a given query
-async function getTotal(query: any) {
+function getTotal(query: any) {
   const queryKey = normalizeQuery(query);
   const total = sessionStorage.getItem(queryKey);
   if (total) {

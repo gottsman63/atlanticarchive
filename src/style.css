@@ -22,14 +22,78 @@ a:hover {
   color: #535bf2;
 }
 
-body {
+.scroll-area-wrapper {
+  position: relative; /* Ensure the wrapper is positioned relative */
+}
+
+.full-height-scroll-area {
+  height: calc(100vh - 210px);
+}
+
+.scroll-area {
+  overflow: auto;
+  margin: 10px;
+  /* margin-left: 10%; */
+  /* max-width: 80%; */
+  border: 3px solid black;
+  position: relative;
+}
+
+.jviewer-search-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1.0rem; /* or whatever spacing feels right */
+  overflow-x: auto;
+  padding: 5px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.jviewer-item-count {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 5px;
+  font-size: 16px;
+  border-radius: 5px;
+  z-index: 1000000001;
+}
+
+.scroll-item {
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+
+.atlantic-title {
+  color: var(--sl-color-primary-600, #3b82f6);
+  font-size: 1.0em;
+  font-weight: bold;
+}
+
+.date {
+  color: #aaa;
+  font-weight: bold;
+}
+
+.snippet {
+  color: black;
+}
+
+.emphasis {
+  font-weight: bold;
+  color: black;
+}
+
+/* body {
   margin: 0;
   display: flex;
   place-items: center;
-  min-width: 320px;
+  min-width: 640px;
   min-height: 100vh;
-}
-
+} */
+/* 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
@@ -81,7 +145,7 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
-
+*/
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

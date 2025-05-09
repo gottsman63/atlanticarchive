@@ -26,17 +26,10 @@ registerIconLibrary('custom', {
 });
 
 export class CompoundButton extends LitElement {
-    term: string = '';
-    isSelected: boolean = false;
-    state: string = 'unchecked';
-    matchCount: number = 0;
-
-  static properties = {
-    term: { type: String },
-    isSelected: { type: Boolean, reflect: true },
-    state: { type: String },
-    matchCount: { type : Number }
-  };
+    term!: string;
+    isSelected!: boolean;
+    state!: string;
+    matchCount!: number;
 
   static styles = css`
     /* Container frame: transparent border by default, black when selected */
@@ -81,6 +74,9 @@ export class CompoundButton extends LitElement {
   constructor() {
     super();
     this.term = '';
+    this.isSelected = false;
+    this.state = 'unchecked';
+    this.matchCount = 0;
   }
 
   render() {
