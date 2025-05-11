@@ -62,9 +62,24 @@ a:hover {
 }
 
 .scroll-item {
-  overflow: hidden;
+  /* overflow: hidden; */
   margin-bottom: 40px;
+  margin-left: 10px;
+  border-top: 1px solid #ccc; /* Adds a thin horizontal line */
+  padding-top: 5px; /* Adds some spacing between the content and the line */
 }
+
+.scroll-item-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* .scroll-item-line1 span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+} */
 
 .atlantic-title {
   color: var(--sl-color-primary-600, #3b82f6);
@@ -72,9 +87,27 @@ a:hover {
   font-weight: bold;
 }
 
+.atlantic-title:hover {
+  text-decoration: underline;
+}
+
 .date {
   color: #aaa;
   font-weight: bold;
+}
+
+.author {
+  color: var(--sl-color-neutral-1000);
+  font-weight: 300;
+  margin-top: -4px;
+  /* font-size: 0.875rem; */
+  font-style: italic;
+  font-weight: 600;
+  /* font-weight: bold; */
+}
+
+.author:hover {
+  text-decoration: underline;
 }
 
 .snippet {
@@ -83,6 +116,11 @@ a:hover {
 
 .emphasis {
   font-weight: bold;
+  color: var(--sl-color-neutral-0, #ffffff);
+  background-color: var(--sl-color-primary-600);
+}
+
+.blurb {
   color: black;
 }
 

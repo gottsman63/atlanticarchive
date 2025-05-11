@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import './compound-button';
+import { CompoundButton } from './compound-button';
 
 /**
  * <term-row>
@@ -75,10 +76,14 @@ export class TermRow extends LitElement {
     return this.terms;
   }
 
-hydrate(terms: Record<string, { term: string; state: string; matchCount: number; isSelected: boolean }>) {
-    this.terms = terms;
+  hydrate(terms: Record<string, { term: string; state: string; matchCount: number; isSelected: boolean }>) {
+    if (terms) {    
+      this.terms = terms;
+    } else {
+      this.terms = {};
+    }
     this.requestUpdate();
-}
+  }
 
   getState(term: string) {
     return this.terms[term].state;
@@ -94,6 +99,9 @@ hydrate(terms: Record<string, { term: string; state: string; matchCount: number;
   setMatchCount(term: string, count: number) {
     if (this.terms[term]) {
       this.terms[term].matchCount = count;
+      this.shadowRoot?.querySelectorAll<CompoundButton>('compound-button').forEach(button => {
+        button.requestUpdate();
+      });
       this.requestUpdate();
     }
   }

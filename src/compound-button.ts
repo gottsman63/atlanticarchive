@@ -10,7 +10,7 @@ import { registerIconLibrary } from '@shoelace-style/shoelace';
  * Displays a term label with a prominently sized include/exclude icon button.
  * - label click toggles selection immediately via attribute manipulation and emits `term-click`
  * - icon click cycles state: unchecked → checked → excluded, emitting `state-change`
- * - CSS highlights the button when `selected` attribute is present and shows black border when `isSelected`
+ * - CSS highlights the button when `selected` attribute is present and shows black border when `selected`
  */
 
 registerIconLibrary('custom', {
@@ -26,11 +26,11 @@ registerIconLibrary('custom', {
 });
 
 export class CompoundButton extends LitElement {
-    term!: string;
-    isSelected!: boolean;
-    state!: string;
-    matchCount!: number;
-
+  term!: string;
+  state!: string;
+  matchCount!: number;
+  selected!: boolean;
+  
   static styles = css`
     /* Container frame: transparent border by default, black when selected */
     :host {
@@ -39,7 +39,7 @@ export class CompoundButton extends LitElement {
       border-radius: 4px;
     }
 
-    :host([isSelected]) {
+    :host([selected]) {
       border-color: black;
     }
 
@@ -74,7 +74,7 @@ export class CompoundButton extends LitElement {
   constructor() {
     super();
     this.term = '';
-    this.isSelected = false;
+    this.selected = false;
     this.state = 'unchecked';
     this.matchCount = 0;
   }
@@ -132,7 +132,7 @@ export class CompoundButton extends LitElement {
   }
 
   /**
-   * Toggle `isSelected` on host synchronously,
+   * Toggle `selected` on host synchronously,
    * then emit `term-click` with the new selection state.
    */
   _onLabelClick(e: CustomEvent) {
@@ -140,9 +140,9 @@ export class CompoundButton extends LitElement {
     if (e.composedPath().some(el => (el as HTMLInputElement).tagName === 'SL-ICON-BUTTON')) {
       return;
     }
-    this.isSelected = !this.isSelected;
+    this.selected = !this.selected;
     this.dispatchEvent(new CustomEvent('selection-change', {
-      detail: { term: this.term, selected: this.isSelected },
+      detail: { term: this.term, selected: this.selected },
       bubbles: true,
       composed: true
     }));

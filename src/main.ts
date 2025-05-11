@@ -17,6 +17,8 @@ import './compound-button.js';
 import './term-row.js';
 import { TermRowHolder } from './term-row-holder';
 import { VirtualizedList } from './vlist';
+import { Chart, ChartDataset, ChartOptions, Colors, registerables } from 'chart.js';
+Chart.register(...registerables);
 
 const fetchUrl = 'https://ocf23hr7gvdwnjvqjdxkyfn72q0krmpf.lambda-url.eu-west-1.on.aws/'; // Default URL
 
@@ -72,6 +74,27 @@ function highlightSnippet(snippet: string | null): string {
       return "";
   }
 }
+// ------------------------------ Term Frequency Chart  ------------------------------
+// class TermFrequencyChart extends HTMLElement {
+//   chart: Chart | null = null;
+//   chartContainer: HTMLCanvasElement | null = null;
+
+//   constructor() {
+//       super();
+//       this.chartContainer = document.createElement('canvas');
+//       this.chartContainer.id = 'term-frequency-chart';
+//       this.appendChild(this.chartContainer);
+//   }
+
+//   clearTermData() {
+//   }
+
+//   setTermData(term: string, frequencies: {}) {
+//   }
+
+//   getColorForTerm(term: string): string {
+//   }
+// }
 
 // --------------------------- Date Slider ------------------------------
 class DoubleSlider extends HTMLElement {
@@ -136,13 +159,13 @@ class SearchElement extends HTMLElement {
 
   constructor(changeCallback: () => void) {
       super();
-      this.innerHTML = `
-      <div class="jviewer-search-bar">
-        <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable></sl-input>
-      </div>
-        `;
+    this.innerHTML = `
+    <div class="jviewer-search-bar">
+      <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off"></sl-input>
+    </div>
+      `;
 
-        const debouncedHandleInputChange = debounce((e) => this.handleInputChange(e), 400);
+        const debouncedHandleInputChange = debounce((e) => this.handleInputChange(e), 500);
 
       // Attach a single event listener to the parent div
       this.querySelectorAll('sl-input').forEach(input => {
@@ -174,7 +197,10 @@ class SearchElement extends HTMLElement {
 
   setSearchString(s: string) {
     sessionStorage.setItem('searchString', s);
-  }
+    const element = this.querySelector('#search-string') as HTMLInputElement;
+    element.value = s;
+    this.changeCallback();
+}
 
   handleInputChange(_event: any): void {
     const element = this.querySelector('#search-string');
@@ -210,12 +236,13 @@ class TermNavigator extends HTMLElement {
   listCache: VirtualizedList | null = null;
   startDateSeconds: number = 0;
   endDateSeconds: number = 0;
+  rowHeightInPixels: number = 80;
 
   constructor() {
       super();
-      const debouncedHandleChange = debounce(() => this.handleChange(), 400);
+      const debouncedHandleChange = debounce(() => this.handleChange(), 500);
       const dateSlider = new DoubleSlider((start, end) => {
-        const startDate = new Date(start, 0, 1).getTime() / 1000; // Jan 1 of start year
+        const startDate = new Date(start, 0, 1).getTime() / 1000; // an 1 of start year
         const endDate = new Date(end, 11, 31, 23, 59, 59).getTime() / 1000; // Dec 31 of end year
         this.setDateRange(startDate, endDate);
         debouncedHandleChange();
@@ -233,7 +260,6 @@ class TermNavigator extends HTMLElement {
           const tentativeTerms = this.termRowHolder.getTentativeTerms();
           const terms = checkedTerms.concat(tentativeTerms);
           const trimmedTerms = terms.map(term => term.trim()).filter(term => term !== '');
-          console.log('trimmedTerms:', trimmedTerms);
           this.searchElement.setSearchString(trimmedTerms.join(' '));
           this.resetMatchCounts();
           this.dehydrate();
@@ -278,12 +304,13 @@ class TermNavigator extends HTMLElement {
           console.error('Scroll area not found:', this.scrollAreaName);
           return;
       }
+      this.selectAuthor = this.selectAuthor.bind(this);
       this.vListRenderCallback = (index, query, incomingItem) => {
           let item;
           if (!incomingItem) {
               item = document.createElement('div');
               item.classList.add('scroll-item'); // Apply the CSS class to the item
-              item.style.height = '30px'; // Ensure row height matches `itemHeight`
+              item.style.height = String(this.rowHeightInPixels) + 'px'; // Ensure row height matches `itemHeight`
               item.textContent = "Loading..." + index; // + ' ' + this.tabName + ' ' + JSON.stringify(query); // Placeholder content
           } else {
               item = incomingItem;
@@ -292,18 +319,31 @@ class TermNavigator extends HTMLElement {
               if (record) {
                   const date = record.date;
                   const dateString = '<span class="date">' + (new Date(date * 1000).toISOString().split('T')[0]) + '</span>';
-                  const title = dateString + ' <span class="atlantic-title">' + record.title + '</span>';
-                  const snip = highlightSnippet(record.snip);
-                  item.textContent = '';
-                  item.innerHTML = title + ' ' + snip;
-                  item.title = '    Ctrl/Cmd-Click to open...\n' + record.link + '\n    ...in a new tab.';
-                  item.addEventListener('click', (event) => {
-                      if (event.ctrlKey || event.metaKey || event.button === 1) { // Check if Ctrl key (or Cmd key on macOS) is pressed
-                          loadPage(record.link, true); // Open in new tab
-                      } else {
-                          loadPage(record.link); // Open in current tab
-                      }
+                  const title = '<span class="atlantic-title">' + record.title + '</span>';
+                  const snip = highlightSnippet(record.snippet);
+                  const line1 = document.createElement('div');
+                  line1.className = 'scroll-item-line';
+                  line1.innerHTML = title + ' ' + snip;
+                  line1.title = '    Ctrl/Cmd-Click to open...\n' + record.link + '\n    ...in a new tab.';
+                  line1.addEventListener('click', (event) => {
+                    if (event.ctrlKey || event.metaKey || event.button === 1) { // Check if Ctrl key (or Cmd key on macOS) is pressed
+                        loadPage(record.link, true); // Open in new tab
+                    } else {
+                        loadPage(record.link); // Open in current tab
+                    }
                   });
+                  item.textContent = '';
+                  item.appendChild(line1);
+                  const authors = record.author_name;
+                  const authorList = authors.map((author: string) => `<span class="author" style="cursor: pointer;" onclick="selectAuthor('${author}')">${author}</span>`).join(', ');
+                  const line2 = document.createElement('div');
+                  line2.className = 'scroll-item-line';
+                  line2.innerHTML = dateString + '<span>  </span>' + authorList;
+                  item.appendChild(line2);
+                  const line3 = document.createElement('div');
+                  line3.className = 'scroll-item-line';
+                  line3.innerHTML = '<span class="blurb">' + record.blurb + '</span>';
+                  item.appendChild(line3);
                   item.style.cursor = 'pointer';
               } else {
                   item.textContent = "Error loading record!";
@@ -318,6 +358,10 @@ class TermNavigator extends HTMLElement {
   async connectedCallback() {
       this.initialize();
       this.handleChange();
+  }
+
+  selectAuthor(author: string) {
+      console.log('Selected author:', author);
   }
 
   setDateRange(startDateSeconds: number, endDateSeconds: number) {
@@ -335,7 +379,6 @@ class TermNavigator extends HTMLElement {
       query.terms = terms;
       query.query = 'incrementalresultcounts';
       getAllRecords(query, (response: any) => {
-          console.log('resetMatchCounts:', response);
           this.termRowHolder.setMatchCounts(response);
           this.dehydrate();
       });
@@ -373,7 +416,7 @@ class TermNavigator extends HTMLElement {
                   this.scrollAreaName,
                   this.vListRenderCallback,
                   totalItemCount,
-                  30,
+                  this.rowHeightInPixels,
                   query,
                   'tabid',
                   getQueryTotal);
