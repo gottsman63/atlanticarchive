@@ -160,8 +160,8 @@ class SearchElement extends HTMLElement {
   constructor(changeCallback: () => void) {
       super();
     this.innerHTML = `
-    <div class="jviewer-search-bar">
-      <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off"></sl-input>
+    <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
+      <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
     </div>
       `;
 
@@ -170,7 +170,7 @@ class SearchElement extends HTMLElement {
       // Attach a single event listener to the parent div
       this.querySelectorAll('sl-input').forEach(input => {
           input.addEventListener('input', debouncedHandleInputChange);
-          input.addEventListener('sl-clear', this.handleInputChange); // no need to debounce this
+          input.addEventListener('sl-clear', (e) => this.handleInputChange(e)); // no need to debounce this
       });
 
       this.changeCallback = changeCallback;
@@ -259,7 +259,7 @@ class TermNavigator extends HTMLElement {
           const checkedTerms = this.termRowHolder.getCheckedTerms();
           const tentativeTerms = this.termRowHolder.getTentativeTerms();
           const terms = checkedTerms.concat(tentativeTerms);
-          const trimmedTerms = terms.map(term => term.trim()).filter(term => term !== '');
+          const trimmedTerms = terms ? (terms.map(term => term.trim()).filter(term => term !== '')) : [];
           this.searchElement.setSearchString(trimmedTerms.join(' '));
           this.resetMatchCounts();
           this.dehydrate();

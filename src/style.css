@@ -70,8 +70,16 @@ a:hover {
 }
 
 .scroll-item-line {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-x: scroll;
+  scrollbar-width: none; /* For Firefox */
+  -ms-overflow-style: none; /* For Internet Explorer and Edge */
+  white-space: nowrap;
+}
+
+.scroll-item-line::-webkit-scrollbar {
+  display: none; /* For Chrome, Safari, and Opera */
+  /* text-overflow: ellipsis; */
+  /* text-overflow: ellipsis; */
   white-space: nowrap;
 }
 

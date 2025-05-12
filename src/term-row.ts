@@ -67,7 +67,7 @@ export class TermRow extends LitElement {
         @selection-change=${(event: CustomEvent) => this._onChildSelectionChange(event)}
       ></compound-button>
       `
-      )}
+    )}
       </div>
     `;
   }
@@ -77,7 +77,7 @@ export class TermRow extends LitElement {
   }
 
   hydrate(terms: Record<string, { term: string; state: string; matchCount: number; isSelected: boolean }>) {
-    if (terms) {    
+    if (terms) {
       this.terms = terms;
     } else {
       this.terms = {};
@@ -161,15 +161,20 @@ export class TermRow extends LitElement {
       return;
     }
     const myTerms = Object.values(this.terms).map(obj => obj.term);
-    if (term.startsWith(myTerms[0])) {
-      delete this.terms[term];
-    }
-    for (let i = 0; i < myTerms.length; i++) {
-      if (myTerms[i].startsWith(term)) {
-        return;
+    if (myTerms && myTerms.length > 0 && myTerms[0]) {
+      if (term.startsWith(myTerms[0])) {
+        delete this.terms[term];
       }
+      for (let i = 0; i < myTerms.length; i++) {
+        if (myTerms[i].startsWith(term)) {
+          return;
+        }
+      }
+      this.terms[term] = { term: term, state: state, isSelected: false, matchCount: 0 };
+    } else {
+      this.terms = {};
+      this.terms[term] = { term: term, state: state, isSelected: false, matchCount: 0 };
     }
-    this.terms[term] = { term: term, state: state, isSelected: false, matchCount: 0 };
     this.requestUpdate();
   }
 
