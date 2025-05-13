@@ -158,6 +158,24 @@ class DoubleSlider extends HTMLElement {
             }
         }
     }
+
+    flashIfConstrained() {
+        const slider = document.getElementById(this.tabName + '-slider');
+        if (slider) {
+            const noUiSliderInstance = (slider as any).noUiSlider;
+            if (noUiSliderInstance) {
+                const values = noUiSliderInstance.get();
+                const startYear = Math.floor(Number(values[0]));
+                const endYear = Math.floor(Number(values[1]));
+                if (startYear > 1857 || endYear < new Date().getFullYear()) {
+                    slider.style.visibility = 'hidden';
+                    setTimeout(() => {
+                        slider.style.visibility = 'visible';
+                    }, 300);
+                }
+            }
+        }
+    }
 }
 
 customElements.define("double-slider", DoubleSlider);
@@ -260,55 +278,66 @@ class TermFrequencyChart extends HTMLElement {
         const ctx = chartCanvas.getContext('2d');
         if (ctx) {
             this.chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [], // Add labels dynamically
-                datasets: [] // Add datasets dynamically
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                legend: {
-                    position: 'top',
+                type: 'bar',
+                data: {
+                    labels: [], // Add labels dynamically
+                    datasets: [] // Add datasets dynamically
                 },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                        },
+                        y: {
+                            stacked: true,
+                        },
+                    },
+                    onClick: (event) => {
+                        // get the pixel X coordinate relative to the chart area
+                        if (! this.chart) return;
+                        if (!this.chart.data) return;
+                        if (!this.chart.data.labels) return;
+                        if (!event.x) return;
+                        const canvasX = event.x;
+                    
+                        // grab the category (or time) scale
+                        const xScale = this.chart.scales['x']; // or 'x-axis-0' in older versions
+                    
+                        // invert the pixel to a value; for a category scale this is a float index
+                        const floatIndex = xScale.getValueForPixel(canvasX) as number;
+                    
+                        // round to the nearest actual data index
+                        const idx = Math.round(floatIndex);
+                    
+                        // guard against clicks outside the data range
+                        if (idx >= 0 && idx < this.chart.data.labels.length) {
+                          const xLabel = this.chart.data.labels[idx];
+                          const term = this.chart.getDatasetMeta(0).label;                    
+                          const clickEvent = new CustomEvent('bar-click', {
+                            detail: { index: idx, term: term, year: xLabel}
+                          });
+                          this.dispatchEvent(clickEvent);
+                        }
+                      },
                 },
-                },
-                scales: {
-                x: {
-                    stacked: true,
-                },
-                y: {
-                    stacked: true,
-                },
-                },
-                onClick: (event, elements) => {
-                if (elements.length > 0) {
-                    const element = elements[0];
-                    const datasetIndex = element.datasetIndex;
-                    const datasetName = this.chart?.data.datasets?.[datasetIndex]?.label;
-                    const index = element.index;
-                    const year = this.chart?.data.labels?.[index];
-                    if (year) {
-                    const clickEvent = new CustomEvent('bar-click', {
-                        detail: { year: year, label: datasetName, datasetIndex: datasetIndex, index: index },
-                    });
-                    console.log('Bar clicked:', year, datasetIndex, index);
-                    this.dispatchEvent(clickEvent);
-                    }
-                }
-                },
-            },
             });
         }
     }
 
     setTerms(terms: String[]) {
         console.log('setTerms:', terms);
-        const query = {query: "stemyearfrequencies", terms: terms }; 
+        const query = { query: "stemyearfrequencies", terms: terms };
         getAllRecords(query, (result: any) => {
             console.log('stemyearfrequencies:', result);
             this.setTermsData(result)
@@ -331,17 +360,25 @@ class TermFrequencyChart extends HTMLElement {
 
         const colors = ['#4a90e2', '#FFA500', '#008000', '#0000FF', '#00FFFF', '#8A2BE2'];
 
+        const titleTerm = Object.keys(termDict)[0];
+        // if (this.chart && this.chart.options && this.chart.options.plugins) {
+        //     this.chart.options.plugins.title = {
+        //         display: true,
+        //         text: `Years in which "${titleTerm}" occurs`,
+        //     };
+        // }
+
         this.clearTermData();
         let colorIndex = 0;
         for (const [term, frequencies] of Object.entries(termDict)) {
             const dataset: ChartDataset<'bar'> = {
-            label: term,
-            data: frequencies.map(frequency => frequency * 10000), // Apply logarithm base 2 transformation
-            backgroundColor: colors[colorIndex % colors.length],
+                label: term,
+                data: frequencies.map(frequency => Math.log2(1 + frequency * 10000)), // Apply logarithm base 10 transformation
+                backgroundColor: colors[colorIndex % colors.length],
             };
             if (this.chart) {
-            this.chart.data.labels = years;
-            this.chart.data.datasets.push(dataset);
+                this.chart.data.labels = years;
+                this.chart.data.datasets.push(dataset);
             }
             colorIndex++;
         }
@@ -376,7 +413,7 @@ class TermNavigator extends HTMLElement {
         this.appendChild(this.termFrequencyChart);
         this.termFrequencyChart.addEventListener('bar-click', (event: any) => {
             const year = event.detail.year;
-            const term = event.detail.label;
+            const term = event.detail.term;
             this.searchElement.setSearchString(term);
             this.setDateRange(year, year);
             this.dateSlider.setDateRange(year, year);
@@ -419,7 +456,7 @@ class TermNavigator extends HTMLElement {
                 this.dehydrate();
             });
         });
-        this.termRowHolder.addEventListener('button-hover-change', (event: any) => { 
+        this.termRowHolder.addEventListener('button-hover-change', (event: any) => {
             const term = event.detail.term;
             this.resetChart([term]);
         });
@@ -589,6 +626,7 @@ class TermNavigator extends HTMLElement {
         this.termRowHolder.addTermsToTopmostRow(trimmedNonTentativeTerms);
         this.termRowHolder.selectTermsForCheck(trimmedNonTentativeTerms);
         this.resetMatchCounts();
+        this.dateSlider.flashIfConstrained();
     }
 
     getQuery(): { query: string, startdate: number, enddate: number, searchstring: string, terms: string[] | null } {
