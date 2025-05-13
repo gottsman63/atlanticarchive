@@ -148,6 +148,16 @@ class DoubleSlider extends HTMLElement {
         // this.shadowRoot.appendChild(style);
         this.appendChild(style);
     }
+
+    setDateRange(startYear: number, endYear: number) {
+        const slider = document.getElementById(this.tabName + '-slider');
+        if (slider) {
+            const noUiSliderInstance = (slider as any).noUiSlider;
+            if (noUiSliderInstance) {
+                noUiSliderInstance.set([startYear, endYear]);
+            }
+        }
+    }
 }
 
 customElements.define("double-slider", DoubleSlider);
@@ -250,36 +260,48 @@ class TermFrequencyChart extends HTMLElement {
         const ctx = chartCanvas.getContext('2d');
         if (ctx) {
             this.chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: [], // Add labels dynamically
-                    datasets: [] // Add datasets dynamically
+            type: 'bar',
+            data: {
+                labels: [], // Add labels dynamically
+                datasets: [] // Add datasets dynamically
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                legend: {
+                    position: 'top',
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        // colors: {
-                        //     enabled: true,
-                        //     forceOverride: true,
-                        // },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                        },
-                    },
-                    scales: {
-                        x: {
-                            stacked: true,
-                        },
-                        y: {
-                            stacked: true,
-                        },
-                    },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
                 },
+                },
+                scales: {
+                x: {
+                    stacked: true,
+                },
+                y: {
+                    stacked: true,
+                },
+                },
+                onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const element = elements[0];
+                    const datasetIndex = element.datasetIndex;
+                    const datasetName = this.chart?.data.datasets?.[datasetIndex]?.label;
+                    const index = element.index;
+                    const year = this.chart?.data.labels?.[index];
+                    if (year) {
+                    const clickEvent = new CustomEvent('bar-click', {
+                        detail: { year: year, label: datasetName, datasetIndex: datasetIndex, index: index },
+                    });
+                    console.log('Bar clicked:', year, datasetIndex, index);
+                    this.dispatchEvent(clickEvent);
+                    }
+                }
+                },
+            },
             });
         }
     }
@@ -336,6 +358,7 @@ customElements.define('term-frequency-chart', TermFrequencyChart);
 class TermNavigator extends HTMLElement {
     searchElement: SearchElement;
     termRowHolder: TermRowHolder;
+    dateSlider: DoubleSlider;
     scrollAreaName: string = 'scroll-area';
     scrollArea: HTMLElement | null = null;
     vListRenderCallback: ((index: number, query: any, incomingItem: HTMLElement | null) => HTMLElement) | null = null;
@@ -351,15 +374,22 @@ class TermNavigator extends HTMLElement {
 
         this.termFrequencyChart = new TermFrequencyChart();
         this.appendChild(this.termFrequencyChart);
+        this.termFrequencyChart.addEventListener('bar-click', (event: any) => {
+            const year = event.detail.year;
+            const term = event.detail.label;
+            this.searchElement.setSearchString(term);
+            this.setDateRange(year, year);
+            this.dateSlider.setDateRange(year, year);
+            this.handleChange();
+        });
 
-        const dateSlider = new DoubleSlider((start, end) => {
+        this.dateSlider = new DoubleSlider((start, end) => {
             const startDate = new Date(start, 0, 1).getTime() / 1000; // an 1 of start year
             const endDate = new Date(end, 11, 31, 23, 59, 59).getTime() / 1000; // Dec 31 of end year
             this.setDateRange(startDate, endDate);
             debouncedHandleChange();
         });
-        this.appendChild(dateSlider);
-
+        this.appendChild(this.dateSlider);
         this.searchElement = new SearchElement(() => { this.handleChange(); });
         this.appendChild(this.searchElement);
         this.searchElement.style.position = 'relative';
