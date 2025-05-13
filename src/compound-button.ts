@@ -28,6 +28,7 @@ registerIconLibrary('custom', {
 export class CompoundButton extends LitElement {
   term!: string;
   state!: string;
+  buttonHoverState: boolean = false;
   matchCount!: number;
   selected!: boolean;
   
@@ -81,7 +82,8 @@ export class CompoundButton extends LitElement {
 
   render() {
     return html`
-      <sl-button @click=${this._onLabelClick}>
+      <sl-button @click=${this._onLabelClick}
+          @mouseenter=${this._onButtonEnter} @mouseleave=${this._onButtonLeave}>
         <span>${this.term}</span><span> </span><span class="match-count">${this.state === 'checked' ? '' : this.matchCount}</span>
         <sl-icon-button
           name=${this._iconName()}
@@ -129,6 +131,20 @@ export class CompoundButton extends LitElement {
     } else {
       this.setState('checked');
     }
+  }
+
+  _onButtonEnter(e: CustomEvent) {
+    e.stopPropagation();
+    this.dispatchEvent(new CustomEvent('button-hover-change', {
+      detail: { state: true, term: this.term },
+      bubbles: true,
+      composed: true
+    }));
+  }
+
+  _onButtonLeave(e: CustomEvent) {
+    e.stopPropagation();
+    this.buttonHoverState = false;
   }
 
   /**

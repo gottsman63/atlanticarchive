@@ -65,6 +65,7 @@ export class TermRow extends LitElement {
         ?selected=${obj.isSelected}
         @state-change=${(event: CustomEvent) => this._onChildStateChange(event)}
         @selection-change=${(event: CustomEvent) => this._onChildSelectionChange(event)}
+        @button-hover-change=${(event: CustomEvent) => this._dispatchButtonHoverChange(event)}
       ></compound-button>
       `
     )}
@@ -117,6 +118,15 @@ export class TermRow extends LitElement {
     const isSelected = target.isSelected;
     this.terms[term].isSelected = isSelected;
     this._dispatchSelectionChange();
+  }
+
+  _dispatchButtonHoverChange(event: CustomEvent) {
+    console.log('dispatching button-hover-change', event.detail);
+    this.dispatchEvent(new CustomEvent('button-hover-change', {
+      detail: {
+        term: event.detail.term
+      }
+    }));
   }
 
   _dispatchSelectionChange() {

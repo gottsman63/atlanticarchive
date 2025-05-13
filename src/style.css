@@ -132,6 +132,13 @@ a:hover {
   color: black;
 }
 
+.chart {
+  width: 90%;
+  margin: 0 auto;
+  min-width: 90%;
+  max-height: 200px;
+}
+
 /* body {
   margin: 0;
   display: flex;

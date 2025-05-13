@@ -51,6 +51,7 @@ export class TermRowHolder extends LitElement {
     const container = this.getContainer();
     if (!container) return;
     // Listen for child selection and state-change events
+    container.addEventListener('button-hover-change', e =>  this._handleButtonHover(e as CustomEvent));
     container.addEventListener('row-selection-change', e => this._handleSelection(e as CustomEvent));
     container.addEventListener('row-check-change', e => this._emitQueryChanged(e as CustomEvent));
   }
@@ -121,7 +122,17 @@ export class TermRowHolder extends LitElement {
       bubbles: true,
       composed: true
     }));
+  }
 
+  _handleButtonHover(event: CustomEvent) {
+    // A term has changed state in a child row.
+    // Which row?
+    console.log('button-hover-change', event.detail);
+    this.dispatchEvent(new CustomEvent('buttonHoverChange', {
+      detail: { term: event.detail.term },
+      bubbles: true,
+      composed: true
+    }));
   }
 
   trimRowsAfter(row: TermRow) {

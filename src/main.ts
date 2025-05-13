@@ -23,10 +23,10 @@ Chart.register(...registerables);
 const fetchUrl = 'https://ocf23hr7gvdwnjvqjdxkyfn72q0krmpf.lambda-url.eu-west-1.on.aws/'; // Default URL
 
 const fetchUrls = [
-  { url: 'https://7xadmewddfcppw5lweztbzlv2u0wxcvk.lambda-url.eu-west-1.on.aws/', region: 'Ireland', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
-//   { url: 'https://ag7chsk5zm74er3oatpdh6j24m0koppw.lambda-url.us-east-2.on.aws/', region: 'Ohio', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
-//   { url: 'https://73jo4qs6ly7d3yvmtau6ueh2vi0nwqwd.lambda-url.eu-west-2.on.aws/', region: 'London', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
-//   { url: 'https://xfpv2livbazgnqjp4gfjc4rlia0pgfey.lambda-url.us-west-2.on.aws/', region: 'Oregon', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+    { url: 'https://7xadmewddfcppw5lweztbzlv2u0wxcvk.lambda-url.eu-west-1.on.aws/', region: 'Ireland', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+    //   { url: 'https://ag7chsk5zm74er3oatpdh6j24m0koppw.lambda-url.us-east-2.on.aws/', region: 'Ohio', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+    //   { url: 'https://73jo4qs6ly7d3yvmtau6ueh2vi0nwqwd.lambda-url.eu-west-2.on.aws/', region: 'London', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+    //   { url: 'https://xfpv2livbazgnqjp4gfjc4rlia0pgfey.lambda-url.us-west-2.on.aws/', region: 'Oregon', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
 ];
 
 let pendingQueries: { [key: string]: any } = {};
@@ -37,42 +37,42 @@ let lastPingTestTime = 0;
 const pingIntervalSeconds = 1 * 60 * 1000; // 5 minutes
 
 function debounce<T extends (...args: any[]) => void>(func: T, delay = 100): (...args: Parameters<T>) => void {
-  let timeoutId: number | undefined;
-  return (...args: Parameters<T>) => {
-    // Clear the previous timeout
-    if (timeoutId !== undefined) {
-      clearTimeout(timeoutId);
-    }
-    // Set a new timeout
-    timeoutId = window.setTimeout(() => {
-      func(...args);
-    }, delay);
-  };
+    let timeoutId: number | undefined;
+    return (...args: Parameters<T>) => {
+        // Clear the previous timeout
+        if (timeoutId !== undefined) {
+            clearTimeout(timeoutId);
+        }
+        // Set a new timeout
+        timeoutId = window.setTimeout(() => {
+            func(...args);
+        }, delay);
+    };
 }
 
 function loadPage(url: string, newTab = false) {
-  const a = document.createElement('a');
-  a.href = url;
-  if (newTab) a.target = '_blank';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+    const a = document.createElement('a');
+    a.href = url;
+    if (newTab) a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 function highlightSnippet(snippet: string | null): string {
-  try {
-      if (snippet) {
-          let s = snippet.replace(/<em>/g, '<span class="emphasis">');
-          let s2 = s.replace(/<\/em>/g, '</span>');
-          let snip = '<span class="snippet">' + s2 + '</span>';
-          return snip;
-      } else {
-          return "";
-      }
-  } catch (error) {
-      console.error("Error in highlightSnippet:", error);
-      return "";
-  }
+    try {
+        if (snippet) {
+            let s = snippet.replace(/<em>/g, '<span class="emphasis">');
+            let s2 = s.replace(/<\/em>/g, '</span>');
+            let snip = '<span class="snippet">' + s2 + '</span>';
+            return snip;
+        } else {
+            return "";
+        }
+    } catch (error) {
+        console.error("Error in highlightSnippet:", error);
+        return "";
+    }
 }
 // ------------------------------ Term Frequency Chart  ------------------------------
 // class TermFrequencyChart extends HTMLElement {
@@ -98,39 +98,39 @@ function highlightSnippet(snippet: string | null): string {
 
 // --------------------------- Date Slider ------------------------------
 class DoubleSlider extends HTMLElement {
-  tabName: string;
+    tabName: string;
 
-  constructor(callback: (arg0: number, arg1: number) => void) {
-      super();
-      this.tabName = 'tabname';
-      // this.attachShadow({ mode: 'open' });
-      const div = document.createElement('div');
-      const id = this.tabName + '-slider'
-      div.id = id;
-      // this.shadowRoot.appendChild(div);
-      this.appendChild(div);
-      const currentYear = new Date().getFullYear();
-      const minYear = 1857;
-      const slider = noUiSlider.create(div, {
-          start: [minYear, currentYear],
-          tooltips: [wNumb({ decimals: 0 }), wNumb({ decimals: 0 })],
-          connect: true,
-          range: {
-              'min': minYear,
-              'max': currentYear
-          },
-          step: 1
-      });
-      slider.on('update', (values: (string | number)[], _handle: number) => {
-        callback(Math.floor(Number(values[0])), Math.floor(Number(values[1])));
-      }) 
+    constructor(callback: (arg0: number, arg1: number) => void) {
+        super();
+        this.tabName = 'tabname';
+        // this.attachShadow({ mode: 'open' });
+        const div = document.createElement('div');
+        const id = this.tabName + '-slider'
+        div.id = id;
+        // this.shadowRoot.appendChild(div);
+        this.appendChild(div);
+        const currentYear = new Date().getFullYear();
+        const minYear = 1857;
+        const slider = noUiSlider.create(div, {
+            start: [minYear, currentYear],
+            tooltips: [wNumb({ decimals: 0 }), wNumb({ decimals: 0 })],
+            connect: true,
+            range: {
+                'min': minYear,
+                'max': currentYear
+            },
+            step: 1
+        });
+        slider.on('update', (values: (string | number)[], _handle: number) => {
+            callback(Math.floor(Number(values[0])), Math.floor(Number(values[1])));
+        })
 
-      div.style.marginLeft = '50px';
-      div.style.marginRight = '50px';
-      div.style.marginTop = '30px';
+        div.style.marginLeft = '50px';
+        div.style.marginRight = '50px';
+        div.style.marginTop = '30px';
 
-      const style = document.createElement('style');
-      style.textContent = `
+        const style = document.createElement('style');
+        style.textContent = `
       .noUi-connect {
               background: var(--sl-color-primary-500, #3b82f6);
           }
@@ -145,9 +145,9 @@ class DoubleSlider extends HTMLElement {
           box-shadow: 0 1px 2px rgba(0,0,0,0.1);
       }
       `
-      // this.shadowRoot.appendChild(style);
-      this.appendChild(style);
-  }
+        // this.shadowRoot.appendChild(style);
+        this.appendChild(style);
+    }
 }
 
 customElements.define("double-slider", DoubleSlider);
@@ -155,11 +155,11 @@ customElements.define("double-slider", DoubleSlider);
 
 // ------------------------------ Search Element --------------------------------
 class SearchElement extends HTMLElement {
-  changeCallback: () => void;
+    changeCallback: () => void;
 
-  constructor(changeCallback: () => void) {
-      super();
-    this.innerHTML = `
+    constructor(changeCallback: () => void) {
+        super();
+        this.innerHTML = `
     <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
       <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
     </div>
@@ -167,122 +167,238 @@ class SearchElement extends HTMLElement {
 
         const debouncedHandleInputChange = debounce((e) => this.handleInputChange(e), 500);
 
-      // Attach a single event listener to the parent div
-      this.querySelectorAll('sl-input').forEach(input => {
-          input.addEventListener('input', debouncedHandleInputChange);
-          input.addEventListener('sl-clear', (e) => this.handleInputChange(e)); // no need to debounce this
-      });
+        // Attach a single event listener to the parent div
+        this.querySelectorAll('sl-input').forEach(input => {
+            input.addEventListener('input', debouncedHandleInputChange);
+            input.addEventListener('sl-clear', (e) => this.handleInputChange(e)); // no need to debounce this
+        });
 
-      this.changeCallback = changeCallback;
+        this.changeCallback = changeCallback;
 
-      window.addEventListener("pageshow", (event) => {
-          if (event.persisted) {
-              // Page was restored from BFCache; reinitialize IndexedDB-based context
-              this.initialize();
-          }
-      });
-  }
+        window.addEventListener("pageshow", (event) => {
+            if (event.persisted) {
+                // Page was restored from BFCache; reinitialize IndexedDB-based context
+                this.initialize();
+            }
+        });
+    }
 
-  initialize() {
-      const result: string = this.getSearchString();
-      const element = this.querySelector('#search-string') as HTMLInputElement;
-      element.value = result;
-  }
+    initialize() {
+        const result: string = this.getSearchString();
+        const element = this.querySelector('#search-string') as HTMLInputElement;
+        element.value = result;
+    }
 
-  getSearchString(): string {
-    const searchString = sessionStorage.getItem('searchString');
-    const result = searchString || '';
-    return result;
-  }
+    getSearchString(): string {
+        const searchString = sessionStorage.getItem('searchString');
+        const result = searchString || '';
+        return result;
+    }
 
-  setSearchString(s: string) {
-    sessionStorage.setItem('searchString', s);
-    const element = this.querySelector('#search-string') as HTMLInputElement;
-    element.value = s;
-    this.changeCallback();
-}
+    setSearchString(s: string) {
+        sessionStorage.setItem('searchString', s);
+        const element = this.querySelector('#search-string') as HTMLInputElement;
+        element.value = s;
+        this.changeCallback();
+    }
 
-  handleInputChange(_event: any): void {
-    const element = this.querySelector('#search-string');
-    this.setSearchString((element as HTMLInputElement)?.value);
-    this.changeCallback();
-  }
+    handleInputChange(_event: any): void {
+        const element = this.querySelector('#search-string');
+        this.setSearchString((element as HTMLInputElement)?.value);
+        this.changeCallback();
+    }
 
-  flashHighlight(elementName: string) {
-      const element = this.querySelector(elementName) as HTMLInputElement;
-      if (element.value.length > 0) {
-          element.classList.add('highlight');
-          setTimeout(() => { element.classList.remove('highlight'); }, 300);
-          setTimeout(() => { element.classList.add('highlight'); }, 600);
-          setTimeout(() => { element.classList.remove('highlight'); }, 900);
-      }
-  }
+    flashHighlight(elementName: string) {
+        const element = this.querySelector(elementName) as HTMLInputElement;
+        if (element.value.length > 0) {
+            element.classList.add('highlight');
+            setTimeout(() => { element.classList.remove('highlight'); }, 300);
+            setTimeout(() => { element.classList.add('highlight'); }, 600);
+            setTimeout(() => { element.classList.remove('highlight'); }, 900);
+        }
+    }
 
-  flashInputFields() {
-      this.flashHighlight('#search-string');
-  }
+    flashInputFields() {
+        this.flashHighlight('#search-string');
+    }
 }
 
 customElements.define('search-element', SearchElement);
 // ---------------------------- End Search Element --------------------------------
 
+// ------------------------------ Stem Frequency Chart ------------------------------
+class TermFrequencyChart extends HTMLElement {
+    chart: Chart | null = null;
+    chartContainer: HTMLDivElement | null = null;
+
+    constructor() {
+        super();
+        Chart.register(Colors);
+        this.chartContainer = document.createElement('div');
+        const chartCanvas = document.createElement('canvas');
+        this.chartContainer.style.width = '93%';
+        this.chartContainer.style.marginLeft = '50px';
+        this.chartContainer.style.marginRight = '0px';
+        this.chartContainer.style.marginTop = '0';
+        this.chartContainer.style.marginBottom = '0';
+        this.chartContainer.style.height = '200px';
+        // chartCanvas.style.height = 'auto';
+        this.chartContainer.appendChild(chartCanvas);
+        // this.chartContainer.className = 'chart';
+        this.chartContainer.id = 'stem-frequency-chart';
+        this.appendChild(this.chartContainer);
+        const ctx = chartCanvas.getContext('2d');
+        if (ctx) {
+            this.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [], // Add labels dynamically
+                    datasets: [] // Add datasets dynamically
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        // colors: {
+                        //     enabled: true,
+                        //     forceOverride: true,
+                        // },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                        },
+                        y: {
+                            stacked: true,
+                        },
+                    },
+                },
+            });
+        }
+    }
+
+    setTerms(terms: String[]) {
+        console.log('setTerms:', terms);
+        const query = {query: "stemyearfrequencies", terms: terms }; 
+        getAllRecords(query, (result: any) => {
+            console.log('stemyearfrequencies:', result);
+            this.setTermsData(result)
+        });
+    }
+
+    clearTermData() {
+        if (this.chart) {
+            this.chart.data.labels = [];
+            this.chart.data.datasets = [];
+            this.chart.update();
+        }
+    }
+
+    setTermsData(termDict: { [key: string]: number[] }) {
+        // termDict is a dictionary of term keys, each with an array of frequencies.
+        const currentYear = new Date().getFullYear();
+        const minYear = 1857;
+        const years = Array.from({ length: currentYear - minYear + 1 }, (_, i) => minYear + i);
+
+        const colors = ['#4a90e2', '#FFA500', '#008000', '#0000FF', '#00FFFF', '#8A2BE2'];
+
+        this.clearTermData();
+        let colorIndex = 0;
+        for (const [term, frequencies] of Object.entries(termDict)) {
+            const dataset: ChartDataset<'bar'> = {
+            label: term,
+            data: frequencies.map(frequency => frequency * 10000), // Apply logarithm base 2 transformation
+            backgroundColor: colors[colorIndex % colors.length],
+            };
+            if (this.chart) {
+            this.chart.data.labels = years;
+            this.chart.data.datasets.push(dataset);
+            }
+            colorIndex++;
+        }
+
+        if (this.chart) {
+            this.chart.update();
+        }
+    }
+}
+customElements.define('term-frequency-chart', TermFrequencyChart);
+// ---------------------------- End Stem Frequency Chart ----------------------------
+
 // --------------------------------- Term Navigator --------------------------------
 class TermNavigator extends HTMLElement {
-  searchElement: SearchElement;
-  termRowHolder: TermRowHolder;
-  scrollAreaName: string = 'scroll-area';
-  scrollArea: HTMLElement | null = null;
-  vListRenderCallback: ((index: number, query: any, incomingItem: HTMLElement | null) => HTMLElement) | null = null;
-  listCache: VirtualizedList | null = null;
-  startDateSeconds: number = 0;
-  endDateSeconds: number = 0;
-  rowHeightInPixels: number = 80;
+    searchElement: SearchElement;
+    termRowHolder: TermRowHolder;
+    scrollAreaName: string = 'scroll-area';
+    scrollArea: HTMLElement | null = null;
+    vListRenderCallback: ((index: number, query: any, incomingItem: HTMLElement | null) => HTMLElement) | null = null;
+    listCache: VirtualizedList | null = null;
+    startDateSeconds: number = 0;
+    endDateSeconds: number = 0;
+    rowHeightInPixels: number = 80;
+    termFrequencyChart!: TermFrequencyChart;
 
-  constructor() {
-      super();
-      const debouncedHandleChange = debounce(() => this.handleChange(), 500);
-      const dateSlider = new DoubleSlider((start, end) => {
-        const startDate = new Date(start, 0, 1).getTime() / 1000; // an 1 of start year
-        const endDate = new Date(end, 11, 31, 23, 59, 59).getTime() / 1000; // Dec 31 of end year
-        this.setDateRange(startDate, endDate);
-        debouncedHandleChange();
-      });
-      this.appendChild(dateSlider);
+    constructor() {
+        super();
+        const debouncedHandleChange = debounce(() => this.handleChange(), 500);
 
-      this.searchElement = new SearchElement(() => { this.handleChange(); });
-      this.appendChild(this.searchElement);
-      this.searchElement.style.position = 'relative';
-      this.searchElement.style.left = '40px';
-      this.termRowHolder = new TermRowHolder();
-      this.appendChild(this.termRowHolder);
-      this.termRowHolder.addEventListener('queryChanged', (_event) => {
-          const checkedTerms = this.termRowHolder.getCheckedTerms();
-          const tentativeTerms = this.termRowHolder.getTentativeTerms();
-          const terms = checkedTerms.concat(tentativeTerms);
-          const trimmedTerms = terms ? (terms.map(term => term.trim()).filter(term => term !== '')) : [];
-          this.searchElement.setSearchString(trimmedTerms.join(' '));
-          this.resetMatchCounts();
-          this.dehydrate();
-      });
-      this.termRowHolder.addEventListener('selectionChanged', (_event) => {
-        const searchTerms = this.searchElement.getSearchString().split(' ');
-          const relatedQuery = { "query": "relatedterms", "terms": searchTerms};
-          // console.log('relatedQuery:', relatedQuery);
-          getAllRecords(relatedQuery, (result: any) => {
-              const relatedTerms: string[] = result;
-              const lowercaseTerms = relatedTerms.map(term => term.toLowerCase());
-              if (lowercaseTerms.length > 0) {
-                  this.termRowHolder.addRow(lowercaseTerms);
-              }
-              this.resetMatchCounts();
-              this.dehydrate();
-          });
-      });
-      // const debouncedHandleChange = debounce(() => this.handleChange(), 200);
-      const resultList = document.createElement('div');
-      resultList.id = 'results';
-      resultList.className = 'scroll-area-wrapper';
-      resultList.innerHTML = `
+        this.termFrequencyChart = new TermFrequencyChart();
+        this.appendChild(this.termFrequencyChart);
+
+        const dateSlider = new DoubleSlider((start, end) => {
+            const startDate = new Date(start, 0, 1).getTime() / 1000; // an 1 of start year
+            const endDate = new Date(end, 11, 31, 23, 59, 59).getTime() / 1000; // Dec 31 of end year
+            this.setDateRange(startDate, endDate);
+            debouncedHandleChange();
+        });
+        this.appendChild(dateSlider);
+
+        this.searchElement = new SearchElement(() => { this.handleChange(); });
+        this.appendChild(this.searchElement);
+        this.searchElement.style.position = 'relative';
+        this.searchElement.style.left = '40px';
+        this.termRowHolder = new TermRowHolder();
+        this.appendChild(this.termRowHolder);
+        this.termRowHolder.addEventListener('queryChanged', (_event) => {
+            const checkedTerms = this.termRowHolder.getCheckedTerms();
+            const tentativeTerms = this.termRowHolder.getTentativeTerms();
+            const terms = checkedTerms.concat(tentativeTerms);
+            const trimmedTerms = terms ? (terms.map(term => term.trim()).filter(term => term !== '')) : [];
+            this.searchElement.setSearchString(trimmedTerms.join(' '));
+            this.resetMatchCounts();
+            this.dehydrate();
+        });
+        this.termRowHolder.addEventListener('selectionChanged', (_event) => {
+            const searchTerms = this.searchElement.getSearchString().split(' ');
+            const relatedQuery = { "query": "relatedterms", "terms": searchTerms };
+            // console.log('relatedQuery:', relatedQuery);
+            getAllRecords(relatedQuery, (result: any) => {
+                const relatedTerms: string[] = result;
+                const lowercaseTerms = relatedTerms.map(term => term.toLowerCase());
+                if (lowercaseTerms.length > 0) {
+                    this.termRowHolder.addRow(lowercaseTerms);
+                }
+                this.resetMatchCounts();
+                this.dehydrate();
+            });
+        });
+        this.termRowHolder.addEventListener('button-hover-change', (event: any) => { 
+            const term = event.detail.term;
+            this.resetChart([term]);
+        });
+
+        // const debouncedHandleChange = debounce(() => this.handleChange(), 200);
+        const resultList = document.createElement('div');
+        resultList.id = 'results';
+        resultList.className = 'scroll-area-wrapper';
+        resultList.innerHTML = `
       <div class="scroll-area-wrapper" id="scroll-area-wrapper">
           <div class="jviewer-item-count">0 Items</div>
           <div id="scroll-area" class="scroll-area full-height-scroll-area">
@@ -291,165 +407,169 @@ class TermNavigator extends HTMLElement {
           </div>
       </div>      
       `;
-      this.appendChild(resultList);
-      setTimeout(() => {
-          this.rehydrate();
-      }, 200);
-  }
+        this.appendChild(resultList);
+        setTimeout(() => {
+            this.rehydrate();
+        }, 200);
+    }
 
-  initialize() {
-      this.searchElement.initialize();
-      this.scrollArea = document.getElementById(this.scrollAreaName);
-      if (!this.scrollArea) {
-          console.error('Scroll area not found:', this.scrollAreaName);
-          return;
-      }
-      this.selectAuthor = this.selectAuthor.bind(this);
-      this.vListRenderCallback = (index, query, incomingItem) => {
-          let item;
-          if (!incomingItem) {
-              item = document.createElement('div');
-              item.classList.add('scroll-item'); // Apply the CSS class to the item
-              item.style.height = String(this.rowHeightInPixels) + 'px'; // Ensure row height matches `itemHeight`
-              item.textContent = "Loading..." + index; // + ' ' + this.tabName + ' ' + JSON.stringify(query); // Placeholder content
-          } else {
-              item = incomingItem;
-          }
-          getRecord(query, index, (record: any) => {
-              if (record) {
-                  const date = record.date;
-                  const dateString = '<span class="date">' + (new Date(date * 1000).toISOString().split('T')[0]) + '</span>';
-                  const title = '<span class="atlantic-title">' + record.title + '</span>';
-                  const snip = highlightSnippet(record.snippet);
-                  const line1 = document.createElement('div');
-                  line1.className = 'scroll-item-line';
-                  line1.innerHTML = title + ' ' + snip;
-                  line1.title = '    Ctrl/Cmd-Click to open...\n' + record.link + '\n    ...in a new tab.';
-                  line1.addEventListener('click', (event) => {
-                    if (event.ctrlKey || event.metaKey || event.button === 1) { // Check if Ctrl key (or Cmd key on macOS) is pressed
-                        loadPage(record.link, true); // Open in new tab
-                    } else {
-                        loadPage(record.link); // Open in current tab
-                    }
-                  });
-                  item.textContent = '';
-                  item.appendChild(line1);
-                  const authors = record.author_name;
-                  const authorList = authors.map((author: string) => `<span class="author" style="cursor: pointer;" onclick="selectAuthor('${author}')">${author}</span>`).join(', ');
-                  const line2 = document.createElement('div');
-                  line2.className = 'scroll-item-line';
-                  line2.innerHTML = dateString + '<span>  </span>' + authorList;
-                  item.appendChild(line2);
-                  const line3 = document.createElement('div');
-                  line3.className = 'scroll-item-line';
-                  line3.innerHTML = '<span class="blurb">' + record.blurb + '</span>';
-                  item.appendChild(line3);
-                  item.style.cursor = 'pointer';
-              } else {
-                  item.textContent = "Error loading record!";
-              }
-          });
-          return item;
-      }
-      const query = this.getQuery();
-      this.initializeListCache(query);
-  }
+    initialize() {
+        this.searchElement.initialize();
+        this.scrollArea = document.getElementById(this.scrollAreaName);
+        if (!this.scrollArea) {
+            console.error('Scroll area not found:', this.scrollAreaName);
+            return;
+        }
+        this.selectAuthor = this.selectAuthor.bind(this);
+        this.vListRenderCallback = (index, query, incomingItem) => {
+            let item;
+            if (!incomingItem) {
+                item = document.createElement('div');
+                item.classList.add('scroll-item'); // Apply the CSS class to the item
+                item.style.height = String(this.rowHeightInPixels) + 'px'; // Ensure row height matches `itemHeight`
+                item.textContent = "Loading..." + index; // + ' ' + this.tabName + ' ' + JSON.stringify(query); // Placeholder content
+            } else {
+                item = incomingItem;
+            }
+            getRecord(query, index, (record: any) => {
+                if (record) {
+                    const date = record.date;
+                    const dateString = '<span class="date">' + (new Date(date * 1000).toISOString().split('T')[0]) + '</span>';
+                    const title = '<span class="atlantic-title">' + record.title + '</span>';
+                    const snip = highlightSnippet(record.snippet);
+                    const line1 = document.createElement('div');
+                    line1.className = 'scroll-item-line';
+                    line1.innerHTML = title + ' ' + snip;
+                    line1.title = '    Ctrl/Cmd-Click to open...\n' + record.link + '\n    ...in a new tab.';
+                    line1.addEventListener('click', (event) => {
+                        if (event.ctrlKey || event.metaKey || event.button === 1) { // Check if Ctrl key (or Cmd key on macOS) is pressed
+                            loadPage(record.link, true); // Open in new tab
+                        } else {
+                            loadPage(record.link); // Open in current tab
+                        }
+                    });
+                    item.textContent = '';
+                    item.appendChild(line1);
+                    const authors = record.author_name;
+                    const authorList = authors.map((author: string) => `<span class="author" style="cursor: pointer;" onclick="selectAuthor('${author}')">${author}</span>`).join(', ');
+                    const line2 = document.createElement('div');
+                    line2.className = 'scroll-item-line';
+                    line2.innerHTML = dateString + '<span>  </span>' + authorList;
+                    item.appendChild(line2);
+                    const line3 = document.createElement('div');
+                    line3.className = 'scroll-item-line';
+                    line3.innerHTML = '<span class="blurb">' + record.blurb + '</span>';
+                    item.appendChild(line3);
+                    item.style.cursor = 'pointer';
+                } else {
+                    item.textContent = "Error loading record!";
+                }
+            });
+            return item;
+        }
+        const query = this.getQuery();
+        this.initializeListCache(query);
+    }
 
-  async connectedCallback() {
-      this.initialize();
-      this.handleChange();
-  }
+    async connectedCallback() {
+        this.initialize();
+        this.handleChange();
+    }
 
-  selectAuthor(author: string) {
-      console.log('Selected author:', author);
-  }
+    selectAuthor(author: string) {
+        console.log('Selected author:', author);
+    }
 
-  setDateRange(startDateSeconds: number, endDateSeconds: number) {
-    this.startDateSeconds = startDateSeconds;
-    this.endDateSeconds = endDateSeconds;
-}
+    setDateRange(startDateSeconds: number, endDateSeconds: number) {
+        this.startDateSeconds = startDateSeconds;
+        this.endDateSeconds = endDateSeconds;
+    }
 
-  resetMatchCounts() {
-      const tentativeTerms = this.termRowHolder.getTentativeTerms();
-      if (tentativeTerms.length > 0) {
-          return;
-      }
-      const query = this.getQuery();
-      const terms = this.termRowHolder.getAllTerms();
-      query.terms = terms;
-      query.query = 'incrementalresultcounts';
-      getAllRecords(query, (response: any) => {
-          this.termRowHolder.setMatchCounts(response);
-          this.dehydrate();
-      });
-  }
+    resetChart(terms: string[]) {
+        this.termFrequencyChart.setTerms(terms);
+    }
 
-  dehydrate() {
-      const termHolderMemento = this.termRowHolder.dehydrate();
-      const memento = {
-          termRowHolder: termHolderMemento,
-          searchElement: this.searchElement.getSearchString()
-      };
-      sessionStorage.setItem('memento', JSON.stringify(memento));
-  }
+    resetMatchCounts() {
+        const tentativeTerms = this.termRowHolder.getTentativeTerms();
+        if (tentativeTerms.length > 0) {
+            return;
+        }
+        const query = this.getQuery();
+        const terms = this.termRowHolder.getAllTerms();
+        query.terms = terms;
+        query.query = 'incrementalresultcounts';
+        getAllRecords(query, (response: any) => {
+            this.termRowHolder.setMatchCounts(response);
+            this.dehydrate();
+        });
+    }
 
-  rehydrate() {
-      const memento = JSON.parse(sessionStorage.getItem('memento') as string);
-      if (!memento) {
-          return;
-      }
-      if (this.termRowHolder) {
-          this.termRowHolder.rehydrate(memento.termRowHolder);
-      } else {
-          console.error('termRowHolder is not initialized.');
-      }
-      this.searchElement.setSearchString(memento.searchElement);
-      this.handleChange();
-  }
+    dehydrate() {
+        const termHolderMemento = this.termRowHolder.dehydrate();
+        const memento = {
+            termRowHolder: termHolderMemento,
+            searchElement: this.searchElement.getSearchString()
+        };
+        sessionStorage.setItem('memento', JSON.stringify(memento));
+    }
 
-  async initializeListCache(query: any) {
-      getQueryTotal(query, (response: any) => {
-          if (response) {
-              const totalItemCount = response.total_count;
-              setTotal(query, totalItemCount);
-              this.listCache = new VirtualizedList(
-                  this.scrollAreaName,
-                  this.vListRenderCallback,
-                  totalItemCount,
-                  this.rowHeightInPixels,
-                  query,
-                  'tabid',
-                  getQueryTotal);
-          }
-      });
-  }
+    rehydrate() {
+        const memento = JSON.parse(sessionStorage.getItem('memento') as string);
+        if (!memento) {
+            return;
+        }
+        if (this.termRowHolder) {
+            this.termRowHolder.rehydrate(memento.termRowHolder);
+        } else {
+            console.error('termRowHolder is not initialized.');
+        }
+        this.searchElement.setSearchString(memento.searchElement);
+        this.handleChange();
+    }
 
-  handleChange() {
-      clearPendingCache();
-      const query = this.getQuery();
-      if (this.listCache) {
-          this.listCache.updateQuery(query);
-      } else {
-          this.initializeListCache(query);  // This should already have happened, but it can fail.
-      }
-      const terms = query.searchstring.trim().split(' ');
-      const tentativeTerms = this.termRowHolder.getTentativeTerms();
-      const nonTentativeTerms = terms.filter(term => !tentativeTerms.includes(term));
-      const trimmedNonTentativeTerms = nonTentativeTerms.map(term => term.trim()).filter(term => term !== '');
-      this.termRowHolder.addTermsToTopmostRow(trimmedNonTentativeTerms);
-      this.termRowHolder.selectTermsForCheck(trimmedNonTentativeTerms);
-      this.resetMatchCounts();
-  }
+    async initializeListCache(query: any) {
+        getQueryTotal(query, (response: any) => {
+            if (response) {
+                const totalItemCount = response.total_count;
+                setTotal(query, totalItemCount);
+                this.listCache = new VirtualizedList(
+                    this.scrollAreaName,
+                    this.vListRenderCallback,
+                    totalItemCount,
+                    this.rowHeightInPixels,
+                    query,
+                    'tabid',
+                    getQueryTotal);
+            }
+        });
+    }
 
-  getQuery(): {query: string, startdate: number, enddate: number, searchstring: string, terms: string[] | null} {
-      const searchString = this.searchElement.getSearchString();
-      const startDateSeconds = this.startDateSeconds;
-      const endDateSeconds = this.endDateSeconds;
-      const startYear = new Date(startDateSeconds * 1000).getFullYear();
-      const endYear = new Date(endDateSeconds * 1000).getFullYear();
-      const query = { query: 'collectionset', startdate: startYear, enddate: endYear, searchstring: searchString, terms: null };
-      return query
-  }
+    handleChange() {
+        clearPendingCache();
+        const query = this.getQuery();
+        if (this.listCache) {
+            this.listCache.updateQuery(query);
+        } else {
+            this.initializeListCache(query);  // This should already have happened, but it can fail.
+        }
+        const terms = query.searchstring.trim().split(' ');
+        const tentativeTerms = this.termRowHolder.getTentativeTerms();
+        const nonTentativeTerms = terms.filter(term => !tentativeTerms.includes(term));
+        const trimmedNonTentativeTerms = nonTentativeTerms.map(term => term.trim()).filter(term => term !== '');
+        this.termRowHolder.addTermsToTopmostRow(trimmedNonTentativeTerms);
+        this.termRowHolder.selectTermsForCheck(trimmedNonTentativeTerms);
+        this.resetMatchCounts();
+    }
+
+    getQuery(): { query: string, startdate: number, enddate: number, searchstring: string, terms: string[] | null } {
+        const searchString = this.searchElement.getSearchString();
+        const startDateSeconds = this.startDateSeconds;
+        const endDateSeconds = this.endDateSeconds;
+        const startYear = new Date(startDateSeconds * 1000).getFullYear();
+        const endYear = new Date(endDateSeconds * 1000).getFullYear();
+        const query = { query: 'collectionset', startdate: startYear, enddate: endYear, searchstring: searchString, terms: null };
+        return query
+    }
 }
 
 customElements.define('term-navigator', TermNavigator);
@@ -461,115 +581,115 @@ customElements.define('term-navigator', TermNavigator);
 // }
 
 function isPending(query: any, blockIndex: number) {
-  const key = JSON.stringify(query) + blockIndex;
-  const record = pendingQueries[key];
-  if (record) {
-      const time = Date.now() - record.time;
-      if (time > 2 * 1000) {
-          delete pendingQueries[key];
-          return false;
-      }
-  } else {
-      return false;
-  }
-  return pendingQueries[key];
+    const key = JSON.stringify(query) + blockIndex;
+    const record = pendingQueries[key];
+    if (record) {
+        const time = Date.now() - record.time;
+        if (time > 2 * 1000) {
+            delete pendingQueries[key];
+            return false;
+        }
+    } else {
+        return false;
+    }
+    return pendingQueries[key];
 }
 
 function addToPendingCache(query: any, blockIndex: number) {
-  const key = JSON.stringify(query) + blockIndex;
-  if (!pendingQueries[key]) {
-      pendingQueries[key] = { query: query, blockIndex: blockIndex, time: Date.now() };
-  }
+    const key = JSON.stringify(query) + blockIndex;
+    if (!pendingQueries[key]) {
+        pendingQueries[key] = { query: query, blockIndex: blockIndex, time: Date.now() };
+    }
 }
 
 function clearPendingCache() {
-  pendingQueries = {};
+    pendingQueries = {};
 }
 
 function initializeDataCallbackCache(query: any) {
-  const key = JSON.stringify(query);
-  if (!dataCallbackCache[key]) {
-      dataCallbackCache[key] = { callbacks: {} };
-  }
-  return key;
+    const key = JSON.stringify(query);
+    if (!dataCallbackCache[key]) {
+        dataCallbackCache[key] = { callbacks: {} };
+    }
+    return key;
 }
 
 async function getAllRecords(query: any, sendResponse: (s: any) => void) {
-  const queryKey = JSON.stringify(query);
-  if (cacheForGetAllRecords[queryKey]) {
-      sendResponse(cacheForGetAllRecords[queryKey]);
-      return;
-  }
-  if (isPending(queryKey, 0)) {
-      return;
-  }
-  addToPendingCache(query, 0);
-  const queryDict = JSON.parse(JSON.stringify(query));
-  // Serialize array values as JSON strings to preserve their structure
-  const queryString = new URLSearchParams(queryDict).toString();
-  const url = getFetchUrl() + '/request?' + queryString;
-  try {
-      let response = await fetch(url, {
-          method: 'GET',
-          headers: {
-              'Content-Type': 'application/json',
-          }
-      });
-      if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      let jsonResponse = await response.json();
-      // console.log('getAllRecords response:', jsonResponse);
-      if (jsonResponse.error) {
-          console.error('Error in response:', jsonResponse.error);
-          console.error('Query:', JSON.stringify(queryDict));
-      } else {
-          cacheForGetAllRecords[queryKey] = jsonResponse.results;
-          sendResponse(jsonResponse.results);
-      }
-  } catch (error) {
-      console.error('Error fetching block:', error);
-      console.error('Query:', JSON.stringify(queryDict));
-      delete pendingQueries[queryKey]; // Prevent infinite retries
-      return null;
-  }
+    const queryKey = JSON.stringify(query);
+    if (cacheForGetAllRecords[queryKey]) {
+        sendResponse(cacheForGetAllRecords[queryKey]);
+        return;
+    }
+    if (isPending(queryKey, 0)) {
+        return;
+    }
+    addToPendingCache(query, 0);
+    const queryDict = JSON.parse(JSON.stringify(query));
+    // Serialize array values as JSON strings to preserve their structure
+    const queryString = new URLSearchParams(queryDict).toString();
+    const url = getFetchUrl() + '/request?' + queryString;
+    try {
+        let response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        let jsonResponse = await response.json();
+        // console.log('getAllRecords response:', jsonResponse);
+        if (jsonResponse.error) {
+            console.error('Error in response:', jsonResponse.error);
+            console.error('Query:', JSON.stringify(queryDict));
+        } else {
+            cacheForGetAllRecords[queryKey] = jsonResponse.results;
+            sendResponse(jsonResponse.results);
+        }
+    } catch (error) {
+        console.error('Error fetching block:', error);
+        console.error('Query:', JSON.stringify(queryDict));
+        delete pendingQueries[queryKey]; // Prevent infinite retries
+        return null;
+    }
 }
 
 function processNewlyArrivedData(query: any, blockIndex: number, response: any) {
-  // console.log(response);
-  let recordIndex = 0
-  const records = response.results;
-  const key = initializeDataCallbackCache(query);
-  for (let i = blockSize * blockIndex; i < blockSize * blockIndex + records.length; i++) {
-      const record = records[recordIndex]
-      saveToCache(query, i, record);
-      const callback = dataCallbackCache[key].callbacks[i];
-      if (callback) {
-          callback(record);
-          delete dataCallbackCache[key].callbacks[i];
-      }
-      recordIndex++;
-  }
+    // console.log(response);
+    let recordIndex = 0
+    const records = response.results;
+    const key = initializeDataCallbackCache(query);
+    for (let i = blockSize * blockIndex; i < blockSize * blockIndex + records.length; i++) {
+        const record = records[recordIndex]
+        saveToCache(query, i, record);
+        const callback = dataCallbackCache[key].callbacks[i];
+        if (callback) {
+            callback(record);
+            delete dataCallbackCache[key].callbacks[i];
+        }
+        recordIndex++;
+    }
 }
 
 function getQueryTotal(query: any, callback: (response: any) => void) {
-  fetchBlockCount(query, callback);
+    fetchBlockCount(query, callback);
 }
 
 function getRecord(query: any, index: number, sendResponse: (response: any) => void) {
-  const blockIndex = Math.floor(index / blockSize);
-  const key = initializeDataCallbackCache(query);
-  const record = getFromCache(query, index);
-  if (record) {
-      sendResponse(record);
-      return;
-  }
-  dataCallbackCache[key].callbacks[index] = sendResponse;
-  fetchBlockOffset(query, blockIndex, (response) => {
-      if (response) {
-          processNewlyArrivedData(query, blockIndex, response);
-      }
-  });
+    const blockIndex = Math.floor(index / blockSize);
+    const key = initializeDataCallbackCache(query);
+    const record = getFromCache(query, index);
+    if (record) {
+        sendResponse(record);
+        return;
+    }
+    dataCallbackCache[key].callbacks[index] = sendResponse;
+    fetchBlockOffset(query, blockIndex, (response) => {
+        if (response) {
+            processNewlyArrivedData(query, blockIndex, response);
+        }
+    });
 }
 
 // function getServerAdmin(key: string, callback: (response: any) => void) {
@@ -577,98 +697,98 @@ function getRecord(query: any, index: number, sendResponse: (response: any) => v
 //   fetchSingle(url, callback);
 // }
 
-function fetchBlockCount(query: any, callback: (response: any) => void ) {
-  if (isPending(query, -1)) {
-      return null;
-  }
-  addToPendingCache(query, -1);
-  const queryDict = JSON.parse(JSON.stringify(query));
-  queryDict.query = 'collectionsetcount';
-  const queryString = new URLSearchParams(queryDict).toString();
-  const url = getFetchUrl() + '/request?' + queryString;
-  fetchSingle(url, callback);
+function fetchBlockCount(query: any, callback: (response: any) => void) {
+    if (isPending(query, -1)) {
+        return null;
+    }
+    addToPendingCache(query, -1);
+    const queryDict = JSON.parse(JSON.stringify(query));
+    queryDict.query = 'collectionsetcount';
+    const queryString = new URLSearchParams(queryDict).toString();
+    const url = getFetchUrl() + '/request?' + queryString;
+    fetchSingle(url, callback);
 }
 
 function fetchBlockOffset(query: any, blockIndex: number, callback: (response: any) => void) {
-  if (isPending(query, blockIndex)) {
-      return;
-  }
-  addToPendingCache(query, blockIndex);
-  const queryDict = JSON.parse(JSON.stringify(query));
-  queryDict.limit = blockSize;
-  queryDict.offset = blockIndex * blockSize;
-  const queryString = new URLSearchParams(queryDict).toString();
-  const url = getFetchUrl() + '/request?' + queryString;
-  fetchSingle(url, callback);
+    if (isPending(query, blockIndex)) {
+        return;
+    }
+    addToPendingCache(query, blockIndex);
+    const queryDict = JSON.parse(JSON.stringify(query));
+    queryDict.limit = blockSize;
+    queryDict.offset = blockIndex * blockSize;
+    const queryString = new URLSearchParams(queryDict).toString();
+    const url = getFetchUrl() + '/request?' + queryString;
+    fetchSingle(url, callback);
 }
 
 async function fetchSingle(url: string, callback: (response: any) => void) {
-  try {
-      const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-              'Content-Type': 'application/json',
-          }
-      });
-      const jsonResponse = await response.json();
-      callback(jsonResponse);
-  } catch (error) {
-      console.error('Error fetching:', url, error);
-  }
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        const jsonResponse = await response.json();
+        callback(jsonResponse);
+    } catch (error) {
+        console.error('Error fetching:', url, error);
+    }
 }
 
 function pingTest() {
-  const queryDict = { "query": "ping" }
-  const queryString = new URLSearchParams(queryDict).toString();
-  // const url = fetchUrl + '/request?' + queryString;
-  for (let i = 0; i < fetchUrls.length; i++) {
-      const fetchUrlObj = fetchUrls[i];
-      const url = fetchUrlObj.url + '/request?' + queryString;
-      fetchUrlObj.latency = Number.MAX_SAFE_INTEGER;
-      try {
-          const startTime = Date.now();
-          fetchSingle(url, (response) => {
-              const duration = Date.now() - startTime;
-              fetchUrlObj.latency = duration;
-              fetchUrlObj.timestamp = response.build_timestamp;
-              fetchUrlObj.crawltime = response.crawl_time;
-              console.log('Build: ' + fetchUrlObj.timestamp + ' Crawl: ' + fetchUrlObj.crawltime + ' ' + fetchUrlObj.region + ' Latency: ' + fetchUrlObj.latency + 'ms');
-          });
-      } catch (error) {
-          console.error(`Error fetching from ${fetchUrlObj.region}:`, error);
-      }
-  }
+    const queryDict = { "query": "ping" }
+    const queryString = new URLSearchParams(queryDict).toString();
+    // const url = fetchUrl + '/request?' + queryString;
+    for (let i = 0; i < fetchUrls.length; i++) {
+        const fetchUrlObj = fetchUrls[i];
+        const url = fetchUrlObj.url + '/request?' + queryString;
+        fetchUrlObj.latency = Number.MAX_SAFE_INTEGER;
+        try {
+            const startTime = Date.now();
+            fetchSingle(url, (response) => {
+                const duration = Date.now() - startTime;
+                fetchUrlObj.latency = duration;
+                fetchUrlObj.timestamp = response.build_timestamp;
+                fetchUrlObj.crawltime = response.crawl_time;
+                console.log('Build: ' + fetchUrlObj.timestamp + ' Crawl: ' + fetchUrlObj.crawltime + ' ' + fetchUrlObj.region + ' Latency: ' + fetchUrlObj.latency + 'ms');
+            });
+        } catch (error) {
+            console.error(`Error fetching from ${fetchUrlObj.region}:`, error);
+        }
+    }
 }
 
 function getFetchUrl() {
-  const currentTime = Date.now();
-  if (currentTime - lastPingTestTime > pingIntervalSeconds) {
-      lastPingTestTime = currentTime;
-      pingTest();
-  }
+    const currentTime = Date.now();
+    if (currentTime - lastPingTestTime > pingIntervalSeconds) {
+        lastPingTestTime = currentTime;
+        pingTest();
+    }
 
-  const sortedUrls = fetchUrls.sort((a, b) => a.latency - b.latency);
-  return sortedUrls[0]?.url || fetchUrl;
+    const sortedUrls = fetchUrls.sort((a, b) => a.latency - b.latency);
+    return sortedUrls[0]?.url || fetchUrl;
 }
 
 async function updateServerLabel() {
-  try {
-      const sortedUrls = fetchUrls.sort((a, b) => a.latency - b.latency);
-      const fetchUrlObj = sortedUrls[0];
-      const startTime = Date.now();
-      const queryDict = { "query": "ping" }
-      const queryString = new URLSearchParams(queryDict).toString();
-      const url = fetchUrlObj.url + '/request?' + queryString;
-      fetchSingle(url, (response) => {
-          const duration = Date.now() - startTime;
-          fetchUrlObj.latency = duration;
-          fetchUrlObj.timestamp = response.build_timestamp;
-          fetchUrlObj.crawltime = response.crawl_time;
-          console.log('Build: ' + fetchUrlObj.timestamp + ' Crawl: ' + fetchUrlObj.crawltime + ' ' + fetchUrlObj.region + ' Latency: ' + fetchUrlObj.latency + 'ms')
-      });
-  } catch (error) {
-      console.error(`Error fetching: `, error);
-  }
+    try {
+        const sortedUrls = fetchUrls.sort((a, b) => a.latency - b.latency);
+        const fetchUrlObj = sortedUrls[0];
+        const startTime = Date.now();
+        const queryDict = { "query": "ping" }
+        const queryString = new URLSearchParams(queryDict).toString();
+        const url = fetchUrlObj.url + '/request?' + queryString;
+        fetchSingle(url, (response) => {
+            const duration = Date.now() - startTime;
+            fetchUrlObj.latency = duration;
+            fetchUrlObj.timestamp = response.build_timestamp;
+            fetchUrlObj.crawltime = response.crawl_time;
+            console.log('Build: ' + fetchUrlObj.timestamp + ' Crawl: ' + fetchUrlObj.crawltime + ' ' + fetchUrlObj.region + ' Latency: ' + fetchUrlObj.latency + 'ms')
+        });
+    } catch (error) {
+        console.error(`Error fetching: `, error);
+    }
 
 }
 // ======================== End Server Database ========================
@@ -679,36 +799,36 @@ async function updateServerLabel() {
 
 // Store total count of records for a query
 function setTotal(query: any, total: number) {
-  const queryKey = normalizeQuery(query);
-  sessionStorage.setItem(queryKey, JSON.stringify(total));
+    const queryKey = normalizeQuery(query);
+    sessionStorage.setItem(queryKey, JSON.stringify(total));
 }
 
 // Retrieve total count for a given query
 function getTotal(query: any) {
-  const queryKey = normalizeQuery(query);
-  const total = sessionStorage.getItem(queryKey);
-  if (total) {
-      return parseInt(total, 10);
-  }
-  return null;
+    const queryKey = normalizeQuery(query);
+    const total = sessionStorage.getItem(queryKey);
+    if (total) {
+        return parseInt(total, 10);
+    }
+    return null;
 }
 
 function normalizeQuery(query: any) {
-  return JSON.stringify(query, Object.keys(query).sort());
+    return JSON.stringify(query, Object.keys(query).sort());
 }
 
 function saveToCache(query: any, index: number, record: any) {
-  const queryStr = normalizeQuery(query);
-  const key = queryStr + ':' + index;
-  sessionStorage.setItem(key, JSON.stringify(record));
+    const queryStr = normalizeQuery(query);
+    const key = queryStr + ':' + index;
+    sessionStorage.setItem(key, JSON.stringify(record));
 }
 
 function getFromCache(query: any, index: number): any {
-  const queryStr = normalizeQuery(query);
-  const key = queryStr + ':' + index;
-  const record = sessionStorage.getItem(key);
-  if (record) {
-      return JSON.parse(record);
-  }
-  return null;
+    const queryStr = normalizeQuery(query);
+    const key = queryStr + ':' + index;
+    const record = sessionStorage.getItem(key);
+    if (record) {
+        return JSON.parse(record);
+    }
+    return null;
 }
