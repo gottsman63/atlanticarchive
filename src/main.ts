@@ -74,6 +74,19 @@ function highlightSnippet(snippet: string | null): string {
         return "";
     }
 }
+
+function flashElement(element: HTMLElement) {
+    element.style.visibility = 'hidden';
+    setTimeout(() => {
+        element.style.visibility = 'visible';
+    }, 300);
+    setTimeout(() => {
+        element.style.visibility = 'hidden';
+    }, 600);
+    setTimeout(() => {
+        element.style.visibility = 'visible';
+    }, 900);
+}
 // ------------------------------ Term Frequency Chart  ------------------------------
 // class TermFrequencyChart extends HTMLElement {
 //   chart: Chart | null = null;
@@ -168,10 +181,7 @@ class DoubleSlider extends HTMLElement {
                 const startYear = Math.floor(Number(values[0]));
                 const endYear = Math.floor(Number(values[1]));
                 if (startYear > 1857 || endYear < new Date().getFullYear()) {
-                    slider.style.visibility = 'hidden';
-                    setTimeout(() => {
-                        slider.style.visibility = 'visible';
-                    }, 300);
+                    flashElement(slider);
                 }
             }
         }
@@ -189,6 +199,7 @@ class SearchElement extends HTMLElement {
         super();
         this.innerHTML = `
     <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
+      <sl-button variant="primary" size="medium" pill @click="${() => this.setFullYearRange()}">Full Year Range</sl-button>
       <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
     </div>
       `;
@@ -215,6 +226,9 @@ class SearchElement extends HTMLElement {
         const result: string = this.getSearchString();
         const element = this.querySelector('#search-string') as HTMLInputElement;
         element.value = result;
+    }
+
+    setFullYearRange() {
     }
 
     getSearchString(): string {
@@ -353,14 +367,14 @@ class TermFrequencyChart extends HTMLElement {
     }
 
     setTermsData(termDict: { [key: string]: number[] }) {
-        // termDict is a dictionary of term keys, each with an array of frequencies.
+        // termDict is a dictionary of term keys, each with an array of counts.
         const currentYear = new Date().getFullYear();
         const minYear = 1857;
         const years = Array.from({ length: currentYear - minYear + 1 }, (_, i) => minYear + i);
 
         const colors = ['#4a90e2', '#FFA500', '#008000', '#0000FF', '#00FFFF', '#8A2BE2'];
 
-        const titleTerm = Object.keys(termDict)[0];
+        // const titleTerm = Object.keys(termDict)[0];
         // if (this.chart && this.chart.options && this.chart.options.plugins) {
         //     this.chart.options.plugins.title = {
         //         display: true,
@@ -370,10 +384,10 @@ class TermFrequencyChart extends HTMLElement {
 
         this.clearTermData();
         let colorIndex = 0;
-        for (const [term, frequencies] of Object.entries(termDict)) {
+        for (const [term, counts] of Object.entries(termDict)) {
             const dataset: ChartDataset<'bar'> = {
                 label: term,
-                data: frequencies.map(frequency => Math.log2(1 + frequency * 10000)), // Apply logarithm base 10 transformation
+                data: counts.map(count => count),
                 backgroundColor: colors[colorIndex % colors.length],
             };
             if (this.chart) {
