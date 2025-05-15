@@ -87,27 +87,6 @@ function flashElement(element: HTMLElement) {
         element.style.visibility = 'visible';
     }, 900);
 }
-// ------------------------------ Term Frequency Chart  ------------------------------
-// class TermFrequencyChart extends HTMLElement {
-//   chart: Chart | null = null;
-//   chartContainer: HTMLCanvasElement | null = null;
-
-//   constructor() {
-//       super();
-//       this.chartContainer = document.createElement('canvas');
-//       this.chartContainer.id = 'term-frequency-chart';
-//       this.appendChild(this.chartContainer);
-//   }
-
-//   clearTermData() {
-//   }
-
-//   setTermData(term: string, frequencies: {}) {
-//   }
-
-//   getColorForTerm(term: string): string {
-//   }
-// }
 
 // --------------------------- Date Slider ------------------------------
 class DoubleSlider extends HTMLElement {
@@ -199,7 +178,6 @@ class SearchElement extends HTMLElement {
         super();
         this.innerHTML = `
     <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
-      <sl-button variant="primary" size="medium" pill @click="${() => this.setFullYearRange()}">Full Year Range</sl-button>
       <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
     </div>
       `;
@@ -268,7 +246,7 @@ class SearchElement extends HTMLElement {
 customElements.define('search-element', SearchElement);
 // ---------------------------- End Search Element --------------------------------
 
-// ------------------------------ Stem Frequency Chart ------------------------------
+// ------------------------------ Term Frequency Chart ------------------------------
 class TermFrequencyChart extends HTMLElement {
     chart: Chart | null = null;
     chartContainer: HTMLDivElement | null = null;
@@ -349,13 +327,21 @@ class TermFrequencyChart extends HTMLElement {
         }
     }
 
-    setTerms(terms: String[]) {
-        console.log('setTerms:', terms);
-        const query = { query: "stemyearfrequencies", terms: terms };
+    setQueryString(queryString: any) {
+        const query = { query: "articlesyearcounts", searchstring: queryString };
         getAllRecords(query, (result: any) => {
-            console.log('stemyearfrequencies:', result);
-            this.setTermsData(result)
+            console.log('articlesyearcounts:', result);
+            this.setTermsData(result);
         });
+    }
+
+    setTerms(terms: String[]) {
+        // console.log('setTerms:', terms);
+        // const query = { query: "stemyearfrequencies", terms: terms };
+        // getAllRecords(query, (result: any) => {
+        //     console.log('stemyearfrequencies:', result);
+        //     this.setTermsData(result)
+        // });
     }
 
     clearTermData() {
@@ -403,7 +389,7 @@ class TermFrequencyChart extends HTMLElement {
     }
 }
 customElements.define('term-frequency-chart', TermFrequencyChart);
-// ---------------------------- End Stem Frequency Chart ----------------------------
+// ---------------------------- End Term Frequency Chart ----------------------------
 
 // --------------------------------- Term Navigator --------------------------------
 class TermNavigator extends HTMLElement {
@@ -640,6 +626,7 @@ class TermNavigator extends HTMLElement {
         this.termRowHolder.addTermsToTopmostRow(trimmedNonTentativeTerms);
         this.termRowHolder.selectTermsForCheck(trimmedNonTentativeTerms);
         this.resetMatchCounts();
+        this.termFrequencyChart.setQueryString(query.searchstring);
         this.dateSlider.flashIfConstrained();
     }
 
