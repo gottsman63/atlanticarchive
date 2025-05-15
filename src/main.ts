@@ -7,6 +7,10 @@ import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.j
 setBasePath('/node_modules/@shoelace-style/shoelace/dist/');
 import '@shoelace-style/shoelace/dist/themes/light.css';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
+import TomSelect from 'tom-select';
+// import 'tom-select/dist/css/tom-select.css';
+import 'tom-select/dist/css/tom-select.default.css';
+
 
 // Import noUiSlider
 import 'nouislider/dist/nouislider.css';
@@ -151,6 +155,33 @@ class DoubleSlider extends HTMLElement {
         }
     }
 
+    getRange() {
+        const slider = document.getElementById(this.tabName + '-slider');
+        if (slider) {
+            const noUiSliderInstance = (slider as any).noUiSlider;
+            if (noUiSliderInstance) {
+                const values = noUiSliderInstance.get();
+                const startYear = Math.floor(Number(values[0]));
+                const endYear = Math.floor(Number(values[1]));
+                return { startYear, endYear };
+            }
+        }
+        return { startYear: 1857, endYear: new Date().getFullYear() };
+    }
+
+    isAtMaxRange() {
+        const startYear = 1857;
+        const endYear = new Date().getFullYear();
+        const years = this.getRange();
+        return years.startYear === startYear && (years.endYear === endYear)
+    }
+
+    resetRange() {
+        const currentYear = new Date().getFullYear();
+        const minYear = 1857;
+        this.setDateRange(minYear, currentYear);
+    }
+
     flashIfConstrained() {
         const slider = document.getElementById(this.tabName + '-slider');
         if (slider) {
@@ -173,16 +204,20 @@ customElements.define("double-slider", DoubleSlider);
 // ------------------------------ Search Element --------------------------------
 class SearchElement extends HTMLElement {
     changeCallback: () => void;
+    resetDateSlider: () => void;
+    tomSelect!: TomSelect;
 
-    constructor(changeCallback: () => void) {
+    constructor(changeCallback: () => void, resetDateSlider: () => void) {
         super();
         this.innerHTML = `
-    <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
-      <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
-    </div>
-      `;
+        <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
+          <sl-button id="reset-date-slider" variant="primary" size="medium" pill>Reset Date Slider</sl-button>
+          <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
+          <select id="author-select" placeholder="Author Name...."></select>
+        </div>
+          `;
 
-        const debouncedHandleInputChange = debounce((e) => this.handleInputChange(e), 500);
+        const debouncedHandleInputChange = debounce((e) => this.handleInputChange(e), 750);
 
         // Attach a single event listener to the parent div
         this.querySelectorAll('sl-input').forEach(input => {
@@ -191,6 +226,10 @@ class SearchElement extends HTMLElement {
         });
 
         this.changeCallback = changeCallback;
+        this.resetDateSlider = resetDateSlider;
+
+        const resetButton = this.querySelector('#reset-date-slider') as HTMLElement;
+        resetButton.addEventListener('click', () => this.resetDateSlider());
 
         window.addEventListener("pageshow", (event) => {
             if (event.persisted) {
@@ -198,6 +237,9 @@ class SearchElement extends HTMLElement {
                 this.initialize();
             }
         });
+        setTimeout(() => {
+            this.setupTomSelect();
+        }, 300);
     }
 
     initialize() {
@@ -206,7 +248,44 @@ class SearchElement extends HTMLElement {
         element.value = result;
     }
 
-    setFullYearRange() {
+    setupTomSelect() {
+        this.tomSelect = new TomSelect('#author-select', {
+            valueField: 'id',
+            dropdownParent: 'body',
+            labelField: 'name',
+            loadThrottle: 300,
+            options: [],
+            searchField: ['name'],
+            load: function (query: String, callback: any) {
+                if (!query.length) callback();
+                getAllRecords({ query: 'authors', searchstring: query }, (result: any) => {
+                    const records: any = result.map((item: any) => ({
+                        id: item.name,
+                        name: item.name
+                    }));
+                    console.log('TomSelect load:', records);
+                    callback(records);
+                });
+            }
+        });
+            
+        this.tomSelect.on('item_add', (value: string) => {
+            const item = this.tomSelect.getItem(value);
+            if (item) {
+                const author = item.getAttribute('data-value');
+                console.log('Selected author:', author);
+            }
+        });
+    }
+
+    setResetDateRangeButtonVisibility(flag: boolean) {
+        const element = document.querySelector('#reset-date-slider') as DoubleSlider;
+        if (!element) return;
+        if (flag) {
+            element.style.visibility = 'visible';
+        } else {
+            element.style.visibility = 'hidden';
+        }
     }
 
     getSearchString(): string {
@@ -297,31 +376,31 @@ class TermFrequencyChart extends HTMLElement {
                     },
                     onClick: (event) => {
                         // get the pixel X coordinate relative to the chart area
-                        if (! this.chart) return;
+                        if (!this.chart) return;
                         if (!this.chart.data) return;
                         if (!this.chart.data.labels) return;
                         if (!event.x) return;
                         const canvasX = event.x;
-                    
+
                         // grab the category (or time) scale
                         const xScale = this.chart.scales['x']; // or 'x-axis-0' in older versions
-                    
+
                         // invert the pixel to a value; for a category scale this is a float index
                         const floatIndex = xScale.getValueForPixel(canvasX) as number;
-                    
+
                         // round to the nearest actual data index
                         const idx = Math.round(floatIndex);
-                    
+
                         // guard against clicks outside the data range
                         if (idx >= 0 && idx < this.chart.data.labels.length) {
-                          const xLabel = this.chart.data.labels[idx];
-                          const term = this.chart.getDatasetMeta(0).label;                    
-                          const clickEvent = new CustomEvent('bar-click', {
-                            detail: { index: idx, term: term, year: xLabel}
-                          });
-                          this.dispatchEvent(clickEvent);
+                            const xLabel = this.chart.data.labels[idx];
+                            const term = this.chart.getDatasetMeta(0).label;
+                            const clickEvent = new CustomEvent('bar-click', {
+                                detail: { index: idx, term: term, year: xLabel }
+                            });
+                            this.dispatchEvent(clickEvent);
                         }
-                      },
+                    },
                 },
             });
         }
@@ -330,7 +409,6 @@ class TermFrequencyChart extends HTMLElement {
     setQueryString(queryString: any) {
         const query = { query: "articlesyearcounts", searchstring: queryString };
         getAllRecords(query, (result: any) => {
-            console.log('articlesyearcounts:', result);
             this.setTermsData(result);
         });
     }
@@ -407,7 +485,7 @@ class TermNavigator extends HTMLElement {
 
     constructor() {
         super();
-        const debouncedHandleChange = debounce(() => this.handleChange(), 500);
+        const debouncedHandleChange = debounce(() => this.handleChange(), 750);
 
         this.termFrequencyChart = new TermFrequencyChart();
         this.appendChild(this.termFrequencyChart);
@@ -427,7 +505,7 @@ class TermNavigator extends HTMLElement {
             debouncedHandleChange();
         });
         this.appendChild(this.dateSlider);
-        this.searchElement = new SearchElement(() => { this.handleChange(); });
+        this.searchElement = new SearchElement(() => this.handleChange(), () => this.resetDateSlider());
         this.appendChild(this.searchElement);
         this.searchElement.style.position = 'relative';
         this.searchElement.style.left = '40px';
@@ -440,6 +518,7 @@ class TermNavigator extends HTMLElement {
             const trimmedTerms = terms ? (terms.map(term => term.trim()).filter(term => term !== '')) : [];
             this.searchElement.setSearchString(trimmedTerms.join(' '));
             this.resetMatchCounts();
+            this.updateResetYearSliderButton();
             this.dehydrate();
         });
         this.termRowHolder.addEventListener('selectionChanged', (_event) => {
@@ -456,12 +535,7 @@ class TermNavigator extends HTMLElement {
                 this.dehydrate();
             });
         });
-        this.termRowHolder.addEventListener('button-hover-change', (event: any) => {
-            const term = event.detail.term;
-            this.resetChart([term]);
-        });
 
-        // const debouncedHandleChange = debounce(() => this.handleChange(), 200);
         const resultList = document.createElement('div');
         resultList.id = 'results';
         resultList.className = 'scroll-area-wrapper';
@@ -538,6 +612,24 @@ class TermNavigator extends HTMLElement {
         this.initializeListCache(query);
     }
 
+    splitQueryIntoTerms(query: string): string[] {
+        const terms: string[] = [];
+        const regex = /"([^"]+)"|(\S+)/g;
+        let match;
+
+        while ((match = regex.exec(query)) !== null) {
+            if (match[1]) {
+                // Quoted phrase
+                terms.push(`"${match[1]}"`);
+            } else if (match[2]) {
+                // Individual word
+                terms.push(match[2]);
+            }
+        }
+
+        return terms;
+    }
+
     async connectedCallback() {
         this.initialize();
         this.handleChange();
@@ -550,6 +642,11 @@ class TermNavigator extends HTMLElement {
     setDateRange(startDateSeconds: number, endDateSeconds: number) {
         this.startDateSeconds = startDateSeconds;
         this.endDateSeconds = endDateSeconds;
+        this.updateResetYearSliderButton();
+    }
+
+    resetDateSlider() {
+        this.dateSlider.resetRange();
     }
 
     resetChart(terms: string[]) {
@@ -569,6 +666,12 @@ class TermNavigator extends HTMLElement {
             this.termRowHolder.setMatchCounts(response);
             this.dehydrate();
         });
+    }
+
+    updateResetYearSliderButton() {
+        if (this.searchElement) {
+            this.searchElement.setResetDateRangeButtonVisibility(!this.dateSlider.isAtMaxRange())
+        }
     }
 
     dehydrate() {
@@ -619,15 +722,17 @@ class TermNavigator extends HTMLElement {
         } else {
             this.initializeListCache(query);  // This should already have happened, but it can fail.
         }
-        const terms = query.searchstring.trim().split(' ');
+        const terms = this.splitQueryIntoTerms(query.searchstring);
+        // const terms = query.searchstring.trim().split(' ');
         const tentativeTerms = this.termRowHolder.getTentativeTerms();
         const nonTentativeTerms = terms.filter(term => !tentativeTerms.includes(term));
         const trimmedNonTentativeTerms = nonTentativeTerms.map(term => term.trim()).filter(term => term !== '');
         this.termRowHolder.addTermsToTopmostRow(trimmedNonTentativeTerms);
         this.termRowHolder.selectTermsForCheck(trimmedNonTentativeTerms);
         this.resetMatchCounts();
+        this.updateResetYearSliderButton();
         this.termFrequencyChart.setQueryString(query.searchstring);
-        this.dateSlider.flashIfConstrained();
+        // this.dateSlider.flashIfConstrained();
     }
 
     getQuery(): { query: string, startdate: number, enddate: number, searchstring: string, terms: string[] | null } {
@@ -681,6 +786,19 @@ function initializeDataCallbackCache(query: any) {
         dataCallbackCache[key] = { callbacks: {} };
     }
     return key;
+}
+
+
+function promiseGetAllRecords(params: any) {
+    return new Promise((resolve, reject) => {
+        try {
+            getAllRecords(params, (result) => {
+                resolve(result);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
 }
 
 async function getAllRecords(query: any, sendResponse: (s: any) => void) {
