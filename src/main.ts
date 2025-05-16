@@ -1,8 +1,3 @@
-import './style.css'
-// Import Shoelace components
-// import '@shoelace-style/shoelace/dist/themes/light.css';
-// import '@shoelace-style/shoelace/dist/shoelace.js';
-// Optionally register all Shoelace components at once
 import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.js';
 setBasePath('/node_modules/@shoelace-style/shoelace/dist/');
 import '@shoelace-style/shoelace/dist/themes/light.css';
@@ -10,6 +5,7 @@ import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import TomSelect from 'tom-select';
 // import 'tom-select/dist/css/tom-select.css';
 import 'tom-select/dist/css/tom-select.default.css';
+import './style.css'
 
 
 // Import noUiSlider
@@ -213,7 +209,7 @@ class SearchElement extends HTMLElement {
         <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
           <sl-button id="reset-date-slider" variant="primary" size="medium" pill>Reset Date Slider</sl-button>
           <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
-          <select id="author-select" placeholder="Author Name...."></select>
+          <select id="author-select" autocorrect="off" placeholder="Author Name...."></select>
         </div>
           `;
 
@@ -261,7 +257,7 @@ class SearchElement extends HTMLElement {
                 getAllRecords({ query: 'authors', searchstring: query }, (result: any) => {
                     const records: any = result.map((item: any) => ({
                         id: item.name,
-                        name: item.name
+                        name: item.name + ' (' + item.article_count + ')',
                     }));
                     console.log('TomSelect load:', records);
                     callback(records);
@@ -591,8 +587,8 @@ class TermNavigator extends HTMLElement {
                     });
                     item.textContent = '';
                     item.appendChild(line1);
-                    const authors = record.author_name;
-                    const authorList = authors.map((author: string) => `<span class="author" style="cursor: pointer;" onclick="selectAuthor('${author}')">${author}</span>`).join(', ');
+                    const authorObjs = record.author_data;
+                    const authorList = authorObjs.map((obj: any) => `<span class="author" style="cursor: pointer;" onclick="selectAuthor('${obj.name}')">${obj.name} (${obj.count})</span>`).join(', ');
                     const line2 = document.createElement('div');
                     line2.className = 'scroll-item-line';
                     line2.innerHTML = dateString + '<span>  </span>' + authorList;
@@ -732,7 +728,6 @@ class TermNavigator extends HTMLElement {
         this.resetMatchCounts();
         this.updateResetYearSliderButton();
         this.termFrequencyChart.setQueryString(query.searchstring);
-        // this.dateSlider.flashIfConstrained();
     }
 
     getQuery(): { query: string, startdate: number, enddate: number, searchstring: string, terms: string[] | null } {

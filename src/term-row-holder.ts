@@ -127,7 +127,6 @@ export class TermRowHolder extends LitElement {
   _handleButtonHover(event: CustomEvent) {
     // A term has changed state in a child row.
     // Which row?
-    console.log('button-hover-change', event.detail);
     this.dispatchEvent(new CustomEvent('buttonHoverChange', {
       detail: { term: event.detail.term },
       bubbles: true,

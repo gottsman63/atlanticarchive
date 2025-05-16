@@ -1,3 +1,62 @@
+/* style.css */
+
+/* 1) The “input” wrapper */
+.ts-wrapper .ts-control {
+  background-color:  var(--sl-input-background-color);
+  border:            var(--sl-input-border-width) solid var(--sl-input-border-color);
+  border-radius:     var(--sl-border-radius-pill);
+  font-family:       var(--sl-font-sans);
+  color:             var(--sl-text-primary);
+  font-size:         var(--sl-font-size-medium);
+  width:          300px;
+}
+
+/* 2) Focus state */
+.ts-wrapper .ts-control.ts-focus {
+  border-color: var(--sl-color-primary-600);
+  box-shadow:   var(--sl-focus-ring);
+}
+
+/* 3) Each selected-item pill */
+.ts-wrapper.multi .ts-item {
+  background-color: var(--sl-color-neutral-200);
+  border-radius:    var(--sl-border-radius-pill);
+  padding:          0 var(--sl-spacing-small);
+  margin:           var(--sl-spacing-x-small) var(--sl-spacing-x-small) 0 0;
+  font-size:        var(--sl-font-size-medium);
+  display:          inline-flex;
+  align-items:      center;
+}
+
+/* 4) The little “×” inside each pill */
+.ts-wrapper.multi .ts-item .ts-remove {
+  margin-left:  var(--sl-spacing-x-small);
+  cursor:       pointer;
+  line-height:  1;
+}
+
+/* 5) The dropdown panel itself */
+.ts-wrapper .ts-dropdown {
+  background:     var(--sl-layer-background-primary);
+  border:         1px solid var(--sl-color-neutral-300);
+  border-radius:  var(--sl-border-radius-medium);
+  box-shadow:     var(--sl-shadow-large);
+  font-family:    var(--sl-font-sans);
+  font-size:    var(--sl-font-size-medium);
+  max-height:     200px;
+  overflow-y:     auto;
+}
+
+/* 6) Each row in the dropdown */
+.ts-wrapper .ts-option {
+  padding: var(--sl-spacing-x-small) var(--sl-spacing-small);
+}
+
+.ts-wrapper .ts-option.ts-highlight,
+.ts-wrapper .ts-option:hover {
+  background: var(--sl-color-primary-100);
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

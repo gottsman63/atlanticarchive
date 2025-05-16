@@ -121,7 +121,6 @@ export class TermRow extends LitElement {
   }
 
   _dispatchButtonHoverChange(event: CustomEvent) {
-    console.log('dispatching button-hover-change', event.detail);
     this.dispatchEvent(new CustomEvent('button-hover-change', {
       detail: {
         term: event.detail.term
