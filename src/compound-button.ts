@@ -1,9 +1,9 @@
 import { LitElement, html, css } from 'lit';
+import { property } from 'lit/decorators.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import { registerIconLibrary } from '@shoelace-style/shoelace';
-
 /**
  * <compound-button>
  *
@@ -30,8 +30,20 @@ export class CompoundButton extends LitElement {
   state!: string;
   buttonHoverState: boolean = false;
   matchCount!: number;
-  selected!: boolean;
-  
+
+  @property({ type: Boolean, reflect: true })
+  get isSelected() {
+    return this.hasAttribute('isSelected');
+  }
+
+    set isSelected(val: boolean) {
+    const has = this.hasAttribute('isSelected');
+    if (val !== has) {
+      val ? this.setAttribute('isSelected', '') : this.removeAttribute('isSelected');
+      this.requestUpdate();
+    }
+  }
+
   static styles = css`
     /* Container frame: transparent border by default, black when selected */
     :host {
@@ -40,7 +52,7 @@ export class CompoundButton extends LitElement {
       border-radius: 4px;
     }
 
-    :host([selected]) {
+    :host([isSelected]) {
       border-color: black;
     }
 
@@ -75,7 +87,7 @@ export class CompoundButton extends LitElement {
   constructor() {
     super();
     this.term = '';
-    this.selected = false;
+    this.isSelected = false;
     this.state = 'unchecked';
     this.matchCount = 0;
   }
@@ -83,7 +95,6 @@ export class CompoundButton extends LitElement {
   render() {
     return html`
       <sl-button @click=${this._onLabelClick}
-          @mouseenter=${this._onButtonEnter} @mouseleave=${this._onButtonLeave}>
         <span>${this.term}</span><span> </span><span class="match-count">${this.state === 'checked' ? '' : this.matchCount}</span>
         <sl-icon-button
           name=${this._iconName()}
@@ -133,19 +144,19 @@ export class CompoundButton extends LitElement {
     }
   }
 
-  _onButtonEnter(e: CustomEvent) {
-    e.stopPropagation();
-    this.dispatchEvent(new CustomEvent('button-hover-change', {
-      detail: { state: true, term: this.term },
-      bubbles: true,
-      composed: true
-    }));
-  }
+  // _onButtonEnter(e: CustomEvent) {
+  //   e.stopPropagation();
+  //   this.dispatchEvent(new CustomEvent('button-hover-change', {
+  //     detail: { state: true, term: this.term },
+  //     bubbles: true,
+  //     composed: true
+  //   }));
+  // }
 
-  _onButtonLeave(e: CustomEvent) {
-    e.stopPropagation();
-    this.buttonHoverState = false;
-  }
+  // _onButtonLeave(e: CustomEvent) {
+  //   e.stopPropagation();
+  //   this.buttonHoverState = false;
+  // }
 
   /**
    * Toggle `selected` on host synchronously,
@@ -156,9 +167,9 @@ export class CompoundButton extends LitElement {
     if (e.composedPath().some(el => (el as HTMLInputElement).tagName === 'SL-ICON-BUTTON')) {
       return;
     }
-    this.selected = !this.selected;
+    this.isSelected = !this.isSelected;
     this.dispatchEvent(new CustomEvent('selection-change', {
-      detail: { term: this.term, selected: this.selected },
+      detail: { term: this.term, isSelected: this.isSelected },
       bubbles: true,
       composed: true
     }));
@@ -181,3 +192,4 @@ export class CompoundButton extends LitElement {
 }
 
 customElements.define('compound-button', CompoundButton);
+

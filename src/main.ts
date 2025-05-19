@@ -15,9 +15,9 @@ import wNumb from 'wnumb';
 import './vlist.js'; // likewise
 import './compound-button.js';
 import './term-row.js';
-import { TermRowHolder } from './term-row-holder';
+// import { TermRowHolder } from './term-row-holder';
 import { VirtualizedList } from './vlist';
-import { Chart, ChartDataset, ChartOptions, Colors, registerables } from 'chart.js';
+import { Chart, ChartDataset, Colors, registerables } from 'chart.js';
 Chart.register(...registerables);
 
 const fetchUrl = 'https://ocf23hr7gvdwnjvqjdxkyfn72q0krmpf.lambda-url.eu-west-1.on.aws/'; // Default URL
@@ -210,6 +210,7 @@ class SearchElement extends HTMLElement {
           <sl-button id="reset-date-slider" variant="primary" size="medium" pill>Reset Date Slider</sl-button>
           <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
           <select id="author-select" autocorrect="off" placeholder="Author Name...."></select>
+          <sl-button id="reset-author" variant="primary" size="medium" pill>Reset Author</sl-button>
         </div>
           `;
 
@@ -224,8 +225,20 @@ class SearchElement extends HTMLElement {
         this.changeCallback = changeCallback;
         this.resetDateSlider = resetDateSlider;
 
+        const searchString = this.querySelector('#search-string') as HTMLInputElement;
+        searchString.addEventListener('input', debouncedHandleInputChange);
+        searchString.addEventListener('sl-clear', (e) => this.handleInputChange(e));
+
+        const authorSelect = this.querySelector('#author-select') as HTMLSelectElement;
+        authorSelect.addEventListener('change', () => this.changeCallback());
+
         const resetButton = this.querySelector('#reset-date-slider') as HTMLElement;
         resetButton.addEventListener('click', () => this.resetDateSlider());
+
+        const resetAuthorButton = this.querySelector('#reset-author') as HTMLElement;
+        resetAuthorButton.addEventListener('click', () => {
+            this.setAuthor('');
+        });
 
         window.addEventListener("pageshow", (event) => {
             if (event.persisted) {
@@ -233,17 +246,19 @@ class SearchElement extends HTMLElement {
                 this.initialize();
             }
         });
-        setTimeout(() => {
-            this.setupTomSelect();
-        }, 300);
     }
 
     initialize() {
         const result: string = this.getSearchString();
         const element = this.querySelector('#search-string') as HTMLInputElement;
         element.value = result;
+        this.setupTomSelect();
     }
 
+    // firstUpdated() {
+    //     this.setupTomSelect();
+    // }
+    
     setupTomSelect() {
         this.tomSelect = new TomSelect('#author-select', {
             valueField: 'id',
@@ -259,17 +274,19 @@ class SearchElement extends HTMLElement {
                         id: item.name,
                         name: item.name + ' (' + item.article_count + ')',
                     }));
-                    console.log('TomSelect load:', records);
                     callback(records);
                 });
             }
         });
-            
+
         this.tomSelect.on('item_add', (value: string) => {
             const item = this.tomSelect.getItem(value);
             if (item) {
                 const author = item.getAttribute('data-value');
-                console.log('Selected author:', author);
+                if (author) {
+                    sessionStorage.setItem('author', author);
+                    this.changeCallback();
+                }
             }
         });
     }
@@ -284,6 +301,24 @@ class SearchElement extends HTMLElement {
         }
     }
 
+    setResetAuthorButtonVisibility(flag: boolean) {
+        const element = document.querySelector('#reset-author') as HTMLInputElement;
+        if (!element) return;
+        if (flag) {
+            element.style.visibility = 'visible';
+        } else {
+            element.style.visibility = 'hidden';
+        }
+    }
+
+    getAuthor(): string {
+        if (!this.tomSelect) {
+            return '';
+        }
+        const author = this.tomSelect.getValue();
+        return author as string;
+    }
+
     getSearchString(): string {
         const searchString = sessionStorage.getItem('searchString');
         const result = searchString || '';
@@ -294,6 +329,23 @@ class SearchElement extends HTMLElement {
         sessionStorage.setItem('searchString', s);
         const element = this.querySelector('#search-string') as HTMLInputElement;
         element.value = s;
+        this.changeCallback();
+    }
+
+    setAuthor(s: string) {
+        sessionStorage.setItem('author', s);
+        const element = this.querySelector('#author-select') as HTMLInputElement;
+        element.value = s;
+        if (this.tomSelect) {
+            this.tomSelect.setValue(s);
+            this.changeCallback();
+            this.setResetAuthorButtonVisibility(s.length > 0);
+        }
+    }
+
+    setDateRange(startYear: number, endYear: number) {
+        const element = this.querySelector('#search-string') as HTMLInputElement;
+        element.value = startYear + ' ' + endYear;
         this.changeCallback();
     }
 
@@ -409,15 +461,6 @@ class TermFrequencyChart extends HTMLElement {
         });
     }
 
-    setTerms(terms: String[]) {
-        // console.log('setTerms:', terms);
-        // const query = { query: "stemyearfrequencies", terms: terms };
-        // getAllRecords(query, (result: any) => {
-        //     console.log('stemyearfrequencies:', result);
-        //     this.setTermsData(result)
-        // });
-    }
-
     clearTermData() {
         if (this.chart) {
             this.chart.data.labels = [];
@@ -468,7 +511,7 @@ customElements.define('term-frequency-chart', TermFrequencyChart);
 // --------------------------------- Term Navigator --------------------------------
 class TermNavigator extends HTMLElement {
     searchElement: SearchElement;
-    termRowHolder: TermRowHolder;
+    // termRowHolder: TermRowHolder;
     dateSlider: DoubleSlider;
     scrollAreaName: string = 'scroll-area';
     scrollArea: HTMLElement | null = null;
@@ -505,32 +548,41 @@ class TermNavigator extends HTMLElement {
         this.appendChild(this.searchElement);
         this.searchElement.style.position = 'relative';
         this.searchElement.style.left = '40px';
-        this.termRowHolder = new TermRowHolder();
-        this.appendChild(this.termRowHolder);
-        this.termRowHolder.addEventListener('queryChanged', (_event) => {
-            const checkedTerms = this.termRowHolder.getCheckedTerms();
-            const tentativeTerms = this.termRowHolder.getTentativeTerms();
-            const terms = checkedTerms.concat(tentativeTerms);
-            const trimmedTerms = terms ? (terms.map(term => term.trim()).filter(term => term !== '')) : [];
-            this.searchElement.setSearchString(trimmedTerms.join(' '));
-            this.resetMatchCounts();
-            this.updateResetYearSliderButton();
-            this.dehydrate();
-        });
-        this.termRowHolder.addEventListener('selectionChanged', (_event) => {
-            const searchTerms = this.searchElement.getSearchString().split(' ');
-            const relatedQuery = { "query": "relatedterms", "terms": searchTerms };
-            // console.log('relatedQuery:', relatedQuery);
-            getAllRecords(relatedQuery, (result: any) => {
-                const relatedTerms: string[] = result;
-                const lowercaseTerms = relatedTerms.map(term => term.toLowerCase());
-                if (lowercaseTerms.length > 0) {
-                    this.termRowHolder.addRow(lowercaseTerms);
-                }
-                this.resetMatchCounts();
-                this.dehydrate();
-            });
-        });
+        // this.searchElement.addEventListener('name-selected', (event: any) => {
+            // const name = event.detail.name;
+            // this.termRowHolder.addTermsToTopmostRow(['[' + name + ']']);
+        // });
+        // this.termRowHolder = new TermRowHolder();
+        // this.appendChild(this.termRowHolder);
+        // this.termRowHolder.addEventListener('queryChanged', (_event) => {
+        //     const checkedTerms = this.termRowHolder.getCheckedTerms();
+        //     const tentativeTerms = this.termRowHolder.getTentativeTerms();
+        //     const terms = checkedTerms.concat(tentativeTerms);
+        //     const trimmedTerms = terms ? (terms.map(term => term.trim()).filter(term => term !== '')) : [];
+        //     this.searchElement.setSearchString(trimmedTerms.join(' '));
+        //     this.resetMatchCounts();
+        //     this.updateResetYearSliderButton();
+        //     this.updateResetAuthorButton
+        //     this.dehydrate();
+        // });
+        // this.termRowHolder.addEventListener('selectionChanged', (_event) => {
+        //     const searchTerms = this.termRowHolder.getSelectedTerms();
+        //     if (searchTerms.length === 0) {
+        //         return;
+        //     }
+        //     const searchTermString = searchTerms.join(' ');
+        //     const relatedQuery = { "query": "relatedterms", "terms": searchTermString };
+        //     // console.log('relatedQuery:', relatedQuery);
+        //     getAllRecords(relatedQuery, (result: any) => {
+        //         const relatedTerms: any = result;
+        //         const terms = relatedTerms.map((a: string[]) => a[0]);
+        //         if (terms.length > 0) {
+        //             this.termRowHolder.addRow(terms);
+        //         }
+        //         this.resetMatchCounts();
+        //         this.dehydrate();
+        //     });
+        // });
 
         const resultList = document.createElement('div');
         resultList.id = 'results';
@@ -545,9 +597,6 @@ class TermNavigator extends HTMLElement {
       </div>      
       `;
         this.appendChild(resultList);
-        setTimeout(() => {
-            this.rehydrate();
-        }, 200);
     }
 
     initialize() {
@@ -628,7 +677,10 @@ class TermNavigator extends HTMLElement {
 
     async connectedCallback() {
         this.initialize();
+        this.rehydrate();
         this.handleChange();
+        this.updateResetYearSliderButton();
+        this.updateResetAuthorButton();
     }
 
     selectAuthor(author: string) {
@@ -645,23 +697,19 @@ class TermNavigator extends HTMLElement {
         this.dateSlider.resetRange();
     }
 
-    resetChart(terms: string[]) {
-        this.termFrequencyChart.setTerms(terms);
-    }
-
     resetMatchCounts() {
-        const tentativeTerms = this.termRowHolder.getTentativeTerms();
-        if (tentativeTerms.length > 0) {
-            return;
-        }
-        const query = this.getQuery();
-        const terms = this.termRowHolder.getAllTerms();
-        query.terms = terms;
-        query.query = 'incrementalresultcounts';
-        getAllRecords(query, (response: any) => {
-            this.termRowHolder.setMatchCounts(response);
-            this.dehydrate();
-        });
+        // const tentativeTerms = this.termRowHolder.getTentativeTerms();
+        // if (tentativeTerms.length > 0) {
+        //     return;
+        // }
+        // const query = this.getQuery();
+        // const terms = this.termRowHolder.getAllTerms();
+        // query.terms = terms;
+        // query.query = 'incrementalresultcounts';
+        // getAllRecords(query, (response: any) => {
+        //     this.termRowHolder.setMatchCounts(response);
+        //     this.dehydrate();
+        // });
     }
 
     updateResetYearSliderButton() {
@@ -670,11 +718,21 @@ class TermNavigator extends HTMLElement {
         }
     }
 
+    updateResetAuthorButton() {
+        if (this.searchElement) {
+            this.searchElement.setResetAuthorButtonVisibility(this.searchElement.getAuthor().length > 0);
+        }
+    }
+
     dehydrate() {
-        const termHolderMemento = this.termRowHolder.dehydrate();
+        // const termHolderMemento = this.termRowHolder.dehydrate();
+        const years = this.dateSlider.getRange();
         const memento = {
-            termRowHolder: termHolderMemento,
-            searchElement: this.searchElement.getSearchString()
+            termRowHolder: null, //termHolderMemento,
+            searchElement: this.searchElement.getSearchString(),
+            author: this.searchElement.getAuthor(),
+            startYear: years.startYear,
+            endYear: years.endYear
         };
         sessionStorage.setItem('memento', JSON.stringify(memento));
     }
@@ -684,13 +742,18 @@ class TermNavigator extends HTMLElement {
         if (!memento) {
             return;
         }
-        if (this.termRowHolder) {
-            this.termRowHolder.rehydrate(memento.termRowHolder);
-        } else {
-            console.error('termRowHolder is not initialized.');
-        }
-        this.searchElement.setSearchString(memento.searchElement);
-        this.handleChange();
+        // if (this.termRowHolder) {
+        //     this.termRowHolder.rehydrate(memento.termRowHolder);
+        // } else {
+        //     console.error('termRowHolder is not initialized.');
+        // }
+        this.searchElement.setSearchString(memento.searchElement || '');
+        this.searchElement.setAuthor(memento.author || '');
+        const defaultStartYear = 1857;
+        const defaultEndYear = new Date().getFullYear();
+        this.searchElement.setDateRange(memento.startYear || defaultStartYear, memento.endYear || defaultEndYear);
+        this.updateResetYearSliderButton();
+        this.updateResetAuthorButton();
     }
 
     async initializeListCache(query: any) {
@@ -718,25 +781,26 @@ class TermNavigator extends HTMLElement {
         } else {
             this.initializeListCache(query);  // This should already have happened, but it can fail.
         }
-        const terms = this.splitQueryIntoTerms(query.searchstring);
+        // const terms = this.splitQueryIntoTerms(query.searchstring);
         // const terms = query.searchstring.trim().split(' ');
-        const tentativeTerms = this.termRowHolder.getTentativeTerms();
-        const nonTentativeTerms = terms.filter(term => !tentativeTerms.includes(term));
-        const trimmedNonTentativeTerms = nonTentativeTerms.map(term => term.trim()).filter(term => term !== '');
-        this.termRowHolder.addTermsToTopmostRow(trimmedNonTentativeTerms);
-        this.termRowHolder.selectTermsForCheck(trimmedNonTentativeTerms);
-        this.resetMatchCounts();
-        this.updateResetYearSliderButton();
+        // const tentativeTerms = this.termRowHolder.getTentativeTerms();
+        // const nonTentativeTerms = terms.filter(term => !tentativeTerms.includes(term));
+        // const trimmedNonTentativeTerms = nonTentativeTerms.map(term => term.trim()).filter(term => term !== '');
+        // this.termRowHolder.addTermsToTopmostRow(trimmedNonTentativeTerms);
+        // this.termRowHolder.selectTermsForCheck(trimmedNonTentativeTerms);
+        // this.resetMatchCounts();
+
         this.termFrequencyChart.setQueryString(query.searchstring);
     }
 
-    getQuery(): { query: string, startdate: number, enddate: number, searchstring: string, terms: string[] | null } {
+    getQuery(): { query: string, startdate: number, enddate: number, searchstring: string, author: string, terms: string[] | null } {
         const searchString = this.searchElement.getSearchString();
+        const author = this.searchElement.getAuthor();
         const startDateSeconds = this.startDateSeconds;
         const endDateSeconds = this.endDateSeconds;
         const startYear = new Date(startDateSeconds * 1000).getFullYear();
         const endYear = new Date(endDateSeconds * 1000).getFullYear();
-        const query = { query: 'collectionset', startdate: startYear, enddate: endYear, searchstring: searchString, terms: null };
+        const query = { query: 'collectionset', startdate: startYear, enddate: endYear, searchstring: searchString, terms: null, "author": author };
         return query
     }
 }
@@ -781,19 +845,6 @@ function initializeDataCallbackCache(query: any) {
         dataCallbackCache[key] = { callbacks: {} };
     }
     return key;
-}
-
-
-function promiseGetAllRecords(params: any) {
-    return new Promise((resolve, reject) => {
-        try {
-            getAllRecords(params, (result) => {
-                resolve(result);
-            });
-        } catch (error) {
-            reject(error);
-        }
-    });
 }
 
 async function getAllRecords(query: any, sendResponse: (s: any) => void) {
@@ -952,27 +1003,6 @@ function getFetchUrl() {
     const sortedUrls = fetchUrls.sort((a, b) => a.latency - b.latency);
     return sortedUrls[0]?.url || fetchUrl;
 }
-
-async function updateServerLabel() {
-    try {
-        const sortedUrls = fetchUrls.sort((a, b) => a.latency - b.latency);
-        const fetchUrlObj = sortedUrls[0];
-        const startTime = Date.now();
-        const queryDict = { "query": "ping" }
-        const queryString = new URLSearchParams(queryDict).toString();
-        const url = fetchUrlObj.url + '/request?' + queryString;
-        fetchSingle(url, (response) => {
-            const duration = Date.now() - startTime;
-            fetchUrlObj.latency = duration;
-            fetchUrlObj.timestamp = response.build_timestamp;
-            fetchUrlObj.crawltime = response.crawl_time;
-            console.log('Build: ' + fetchUrlObj.timestamp + ' Crawl: ' + fetchUrlObj.crawltime + ' ' + fetchUrlObj.region + ' Latency: ' + fetchUrlObj.latency + 'ms')
-        });
-    } catch (error) {
-        console.error(`Error fetching: `, error);
-    }
-
-}
 // ======================== End Server Database ========================
 
 /* --------------------------------------------------------------------------
@@ -983,16 +1013,6 @@ async function updateServerLabel() {
 function setTotal(query: any, total: number) {
     const queryKey = normalizeQuery(query);
     sessionStorage.setItem(queryKey, JSON.stringify(total));
-}
-
-// Retrieve total count for a given query
-function getTotal(query: any) {
-    const queryKey = normalizeQuery(query);
-    const total = sessionStorage.getItem(queryKey);
-    if (total) {
-        return parseInt(total, 10);
-    }
-    return null;
 }
 
 function normalizeQuery(query: any) {

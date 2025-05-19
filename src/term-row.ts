@@ -179,10 +179,10 @@ export class TermRow extends LitElement {
           return;
         }
       }
-      this.terms[term] = { term: term, state: state, isSelected: false, matchCount: 0 };
+      this.terms[term] = { term: term, state: state, isSelected: true, matchCount: 0 };
     } else {
       this.terms = {};
-      this.terms[term] = { term: term, state: state, isSelected: false, matchCount: 0 };
+      this.terms[term] = { term: term, state: state, isSelected: true, matchCount: 0 };
     }
     this.requestUpdate();
   }
