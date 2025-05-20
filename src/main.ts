@@ -258,7 +258,7 @@ class SearchElement extends HTMLElement {
     // firstUpdated() {
     //     this.setupTomSelect();
     // }
-    
+
     setupTomSelect() {
         this.tomSelect = new TomSelect('#author-select', {
             valueField: 'id',
@@ -377,6 +377,7 @@ customElements.define('search-element', SearchElement);
 class TermFrequencyChart extends HTMLElement {
     chart: Chart | null = null;
     chartContainer: HTMLDivElement | null = null;
+    activeIndex: number = 0;
 
     constructor() {
         super();
@@ -403,6 +404,34 @@ class TermFrequencyChart extends HTMLElement {
                     datasets: [] // Add datasets dynamically
                 },
                 options: {
+                    onClick: (event, _elements) => {
+                        if (!this.chart) return;
+                        if (!event.x) return;
+                        const canvasX = event.x;
+                        // grab the category (or time) scale
+                        const xScale = this.chart.scales['x']; // or 'x-axis-0' in older versions
+
+                        // invert the pixel to a value; for a category scale this is a float index
+                        const floatIndex = xScale.getValueForPixel(canvasX) as number;
+
+                        // round to the nearest actual data index
+                        const index = Math.round(floatIndex);
+                        // const { index } = elements[0];
+                        if (index !== this.activeIndex) {
+                            this.activeIndex = index;
+                            this.chart?.update();            // re-render with new colors
+                            // 3) Report the year
+                            if (this.chart?.data.labels) {
+                                const year = this.chart.data.labels[index];
+                                console.log('Year:', year);
+                                const term = this.chart.getDatasetMeta(0).label;
+                                const hoverEvent = new CustomEvent('bar-click', {
+                                    detail: { "index": index, "term": term, "year": year, rowIndexOfYear: this.getCumulativeLineIndexOfYear(parseInt(year as string)) },
+                                });
+                                this.dispatchEvent(hoverEvent);
+                            }
+                        }
+                    },
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -421,33 +450,6 @@ class TermFrequencyChart extends HTMLElement {
                         y: {
                             stacked: true,
                         },
-                    },
-                    onClick: (event) => {
-                        // get the pixel X coordinate relative to the chart area
-                        if (!this.chart) return;
-                        if (!this.chart.data) return;
-                        if (!this.chart.data.labels) return;
-                        if (!event.x) return;
-                        const canvasX = event.x;
-
-                        // grab the category (or time) scale
-                        const xScale = this.chart.scales['x']; // or 'x-axis-0' in older versions
-
-                        // invert the pixel to a value; for a category scale this is a float index
-                        const floatIndex = xScale.getValueForPixel(canvasX) as number;
-
-                        // round to the nearest actual data index
-                        const idx = Math.round(floatIndex);
-
-                        // guard against clicks outside the data range
-                        if (idx >= 0 && idx < this.chart.data.labels.length) {
-                            const xLabel = this.chart.data.labels[idx];
-                            const term = this.chart.getDatasetMeta(0).label;
-                            const clickEvent = new CustomEvent('bar-click', {
-                                detail: { index: idx, term: term, year: xLabel }
-                            });
-                            this.dispatchEvent(clickEvent);
-                        }
                     },
                 },
             });
@@ -469,6 +471,38 @@ class TermFrequencyChart extends HTMLElement {
         }
     }
 
+    getCumulativeLineIndexOfYear(year: number) {
+        const firstDataset = this.chart?.data.datasets[0];
+        if (!firstDataset) return -1;
+        const datasetIndex = year - 1857;
+        let rowCount = 0
+        for (let i = firstDataset.data.length - 1; i >= datasetIndex; i--) {
+            rowCount += firstDataset.data[i] as number;
+        }
+        // for (let i = 0; i < datasetIndex; i++) {
+        //     rowCount += firstDataset.data[i] as number;
+        // }
+        return rowCount;
+    }
+
+    setLineIndexHighlight(index: number) {
+        // index is the index of the line that's currently being displayed at the top of the scrolling area.
+        if (!this.chart) return;
+        const dataset = this.chart.data.datasets[0];
+        if (!dataset) return;
+        let cumulativeLineCount = 0
+        for (let i = dataset.data.length - 1; i > 0 ; i--) {
+            cumulativeLineCount += dataset.data[i] as number;
+            if (cumulativeLineCount >= index) {
+                this.activeIndex = i;
+                break;
+            }
+        }
+        if (this.chart) {
+            this.chart.update();
+        }
+    }
+
     setTermsData(termDict: { [key: string]: number[] }) {
         // termDict is a dictionary of term keys, each with an array of counts.
         const currentYear = new Date().getFullYear();
@@ -476,14 +510,7 @@ class TermFrequencyChart extends HTMLElement {
         const years = Array.from({ length: currentYear - minYear + 1 }, (_, i) => minYear + i);
 
         const colors = ['#4a90e2', '#FFA500', '#008000', '#0000FF', '#00FFFF', '#8A2BE2'];
-
-        // const titleTerm = Object.keys(termDict)[0];
-        // if (this.chart && this.chart.options && this.chart.options.plugins) {
-        //     this.chart.options.plugins.title = {
-        //         display: true,
-        //         text: `Years in which "${titleTerm}" occurs`,
-        //     };
-        // }
+        const owner = this;
 
         this.clearTermData();
         let colorIndex = 0;
@@ -491,7 +518,10 @@ class TermFrequencyChart extends HTMLElement {
             const dataset: ChartDataset<'bar'> = {
                 label: term,
                 data: counts.map(count => count),
-                backgroundColor: colors[colorIndex % colors.length],
+                backgroundColor: function (context: any) {
+                    const idx = context.dataIndex;
+                    return idx === owner.activeIndex ? 'red' : colors[0];
+                }
             };
             if (this.chart) {
                 this.chart.data.labels = years;
@@ -529,12 +559,13 @@ class TermNavigator extends HTMLElement {
         this.termFrequencyChart = new TermFrequencyChart();
         this.appendChild(this.termFrequencyChart);
         this.termFrequencyChart.addEventListener('bar-click', (event: any) => {
-            const year = event.detail.year;
-            const term = event.detail.term;
-            this.searchElement.setSearchString(term);
-            this.setDateRange(year, year);
-            this.dateSlider.setDateRange(year, year);
-            this.handleChange();
+            const rowIndexOfYear = event.detail.rowIndexOfYear;
+            this.listCache?.scrollToIndex(rowIndexOfYear);
+            // const term = event.detail.term;
+            // this.searchElement.setSearchString(term);
+            // this.setDateRange(year, year);
+            // this.dateSlider.setDateRange(year, year);
+            // this.handleChange();
         });
 
         this.dateSlider = new DoubleSlider((start, end) => {
@@ -543,14 +574,14 @@ class TermNavigator extends HTMLElement {
             this.setDateRange(startDate, endDate);
             debouncedHandleChange();
         });
-        this.appendChild(this.dateSlider);
+        // this.appendChild(this.dateSlider);
         this.searchElement = new SearchElement(() => this.handleChange(), () => this.resetDateSlider());
         this.appendChild(this.searchElement);
         this.searchElement.style.position = 'relative';
         this.searchElement.style.left = '40px';
         // this.searchElement.addEventListener('name-selected', (event: any) => {
-            // const name = event.detail.name;
-            // this.termRowHolder.addTermsToTopmostRow(['[' + name + ']']);
+        // const name = event.detail.name;
+        // this.termRowHolder.addTermsToTopmostRow(['[' + name + ']']);
         // });
         // this.termRowHolder = new TermRowHolder();
         // this.appendChild(this.termRowHolder);
@@ -590,7 +621,7 @@ class TermNavigator extends HTMLElement {
         resultList.innerHTML = `
       <div class="scroll-area-wrapper" id="scroll-area-wrapper">
           <div class="jviewer-item-count">0 Items</div>
-          <div id="scroll-area" class="scroll-area full-height-scroll-area">
+          <div id="scroll-area" class="scroll-area">
               <ul id="list" class="hyperlist">
               </ul>
           </div>
@@ -768,7 +799,8 @@ class TermNavigator extends HTMLElement {
                     this.rowHeightInPixels,
                     query,
                     'tabid',
-                    getQueryTotal);
+                    getQueryTotal,
+                (scrollIndex: number) => this.termFrequencyChart.setLineIndexHighlight(scrollIndex))
             }
         });
     }
@@ -847,12 +879,17 @@ function initializeDataCallbackCache(query: any) {
     return key;
 }
 
-async function getAllRecords(query: any, sendResponse: (s: any) => void) {
+async function getAllRecords(query: any, sendResponse: (s: any) => void, retryIndex: number = 0) {
     const queryKey = JSON.stringify(query);
-    if (cacheForGetAllRecords[queryKey]) {
+    if (cacheForGetAllRecords[queryKey] && retryIndex === 0) {
         sendResponse(cacheForGetAllRecords[queryKey]);
         return;
     }
+    if (cacheForGetAllRecords[queryKey]) {
+        // At some point the query came back with a result and sendResponse was called; this is an unnecessary retry.
+        return;
+    }
+    // retryGetAllRecords(query, sendResponse, retryIndex + 1);
     if (isPending(queryKey, 0)) {
         return;
     }
@@ -877,8 +914,11 @@ async function getAllRecords(query: any, sendResponse: (s: any) => void) {
             console.error('Error in response:', jsonResponse.error);
             console.error('Query:', JSON.stringify(queryDict));
         } else {
+            if (!cacheForGetAllRecords[queryKey]) {
+                // Another version of this query might have been received and processed in the meantime.
+                sendResponse(jsonResponse.results);
+            }
             cacheForGetAllRecords[queryKey] = jsonResponse.results;
-            sendResponse(jsonResponse.results);
         }
     } catch (error) {
         console.error('Error fetching block:', error);
@@ -946,6 +986,7 @@ function fetchBlockOffset(query: any, blockIndex: number, callback: (response: a
     if (isPending(query, blockIndex)) {
         return;
     }
+    console.log('fetchBlockOffset', query, blockIndex);
     addToPendingCache(query, blockIndex);
     const queryDict = JSON.parse(JSON.stringify(query));
     queryDict.limit = blockSize;
@@ -957,6 +998,7 @@ function fetchBlockOffset(query: any, blockIndex: number, callback: (response: a
 
 async function fetchSingle(url: string, callback: (response: any) => void) {
     try {
+        const startTime = Date.now();
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -964,6 +1006,8 @@ async function fetchSingle(url: string, callback: (response: any) => void) {
             }
         });
         const jsonResponse = await response.json();
+        const duration = Date.now() - startTime;
+        console.log('Fetch duration (' + url + '):', duration, 'ms');
         callback(jsonResponse);
     } catch (error) {
         console.error('Error fetching:', url, error);

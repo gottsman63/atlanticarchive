@@ -8,7 +8,7 @@
   font-family:       var(--sl-font-sans);
   color:             var(--sl-text-primary);
   font-size:         var(--sl-font-size-medium);
-  width:          300px;
+  width:          00px;
 }
 
 /* 2) Focus state */
@@ -90,12 +90,14 @@ a:hover {
 }
 
 .scroll-area {
-  overflow: auto;
+  overflow: scroll;
+  scrollbar-width: 100px;
   margin: 10px;
   /* margin-left: 10%; */
   /* max-width: 80%; */
   border: 3px solid black;
   position: relative;
+  height: calc(100vh - 210px);
 }
 
 .jviewer-search-bar {
@@ -159,7 +161,7 @@ a:hover {
 }
 
 .date {
-  color: #aaa;
+  color: var(--sl-color-danger-600, #ff0000);
   font-weight: bold;
 }
 

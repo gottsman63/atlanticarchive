@@ -28,6 +28,7 @@ export class VirtualizedList {
     scrollKey: string;
     getTotalItems: (query: string, callback: (response: { total_count: number }) => void) => void;
     ticking: boolean = false;
+    scrollCallback: ((scrollTop: number) => void) | null = null;
 
     constructor(containerName: string, 
         itemRenderer: ((index: number, query: any, incomingItem: HTMLElement | null) => HTMLElement) | null = null, 
@@ -35,7 +36,8 @@ export class VirtualizedList {
         rowHeight: number, 
         query: string, 
         listName: string, 
-        getTotalItems: (query: string, callback: (response: { total_count: number }) => void) => void) {
+        getTotalItems: (query: string, callback: (response: { total_count: number }) => void) => void,
+        scrollCallback: ((scrollTop: number) => void) | null = null) {
         // if (! container) {
         //     console.error('VirtualizedList: container is null');
         //     debugger
@@ -51,6 +53,7 @@ export class VirtualizedList {
         this.spacer = document.createElement('div');
         this.scrollKey = this.listName + ':scroll';
         this.getTotalItems = getTotalItems;
+        this.scrollCallback = scrollCallback;
         this.init(); 
     }
 
@@ -78,6 +81,18 @@ export class VirtualizedList {
         this.updateItemCount(this.totalItems);
     }
 
+    scrollToIndex(index: number) {
+        const scrllTopOffset = index * this.rowHeight;
+        this.getContainer().scrollTop = scrllTopOffset;
+        // const item = this.prepVisibleItem(index);
+        // if (!item) {
+        //     console.error('VirtualizedList: item is null for index:', index);
+        //     return;
+        // }
+        // item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        this.renderVisibleItems();
+    }
+
     getContainer(): HTMLElement {
         const element = document.getElementById(this.containerName);
         if (!element) {
@@ -103,6 +118,9 @@ export class VirtualizedList {
 
     prepVisibleItem(index: number) {
         if (!this.itemRenderer) { return null; }
+        if (this.visibleItems.has(index)) {
+            return this.visibleItems.get(index);
+        }
         const itemElement = this.itemRenderer(index, this.query, null); // Create item via callback
         if (!itemElement) {
             console.error('VirtualizedList: itemRenderer returned null for index:', index);
@@ -143,6 +161,8 @@ export class VirtualizedList {
                 }
             }
         }
+        const firstVisibleLineIndex = Math.floor(this.getContainer().scrollTop / this.rowHeight);
+        if (this.scrollCallback) this.scrollCallback(firstVisibleLineIndex);
     }
     onScroll() {
         const scrollTop = this.getContainer().scrollTop;
