@@ -153,11 +153,11 @@ export class VirtualizedList {
                 itemElement = this.prepVisibleItem(i);
             } else {
                 itemElement = this.visibleItems.get(i) as HTMLElement;
-                const creationTime = (itemElement as any).creationTime;
-                if (itemElement.textContent && itemElement.textContent.startsWith("Loading...") && (Date.now() - creationTime > queryRetryDelay)) {
+                // const creationTime = (itemElement as any).creationTime;
+                if (itemElement.textContent && itemElement.textContent.startsWith("Loading...")) { //&& (Date.now() - creationTime > queryRetryDelay)) {
                     this.itemRenderer(i, this.query, itemElement);
-                    (itemElement as any).creationTime = Date.now();
-                    itemElement.textContent = "Loading..." + (itemElement as any).creationTime
+                    // (itemElement as any).creationTime = Date.now();
+                    // itemElement.textContent = "Loading..." + (itemElement as any).creationTime
                 }
             }
         }

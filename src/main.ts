@@ -29,12 +29,18 @@ const fetchUrls = [
     //   { url: 'https://xfpv2livbazgnqjp4gfjc4rlia0pgfey.lambda-url.us-west-2.on.aws/', region: 'Oregon', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
 ];
 
-let pendingQueries: { [key: string]: any } = {};
-const blockSize = 50;
+// let pendingQueries: { [key: string]: any } = {};
+const blockSize = 25;
 const dataCallbackCache: { [key: string]: any } = {};
-const cacheForGetAllRecords: { [key: string]: any } = {};
+// const cacheForGetAllRecords: { [key: string]: any } = {};
 let lastPingTestTime = 0;
 const pingIntervalSeconds = 1 * 60 * 1000; // 5 minutes
+
+// ------------------------- Fetch Single Retry Management -------------------------
+const fetchSingleCache: Map<string, { url: string, response: any, callback: any, nextTryTime: number }> = new Map();
+let fetchSingleScanInterval: any;
+startScanningForFetchSingleRetries();
+// ----------------------- End Fetch Single Retry Management -----------------------
 
 function debounce<T extends (...args: any[]) => void>(func: T, delay = 100): (...args: Parameters<T>) => void {
     let timeoutId: number | undefined;
@@ -423,7 +429,6 @@ class TermFrequencyChart extends HTMLElement {
                             // 3) Report the year
                             if (this.chart?.data.labels) {
                                 const year = this.chart.data.labels[index];
-                                console.log('Year:', year);
                                 const term = this.chart.getDatasetMeta(0).label;
                                 const hoverEvent = new CustomEvent('bar-click', {
                                     detail: { "index": index, "term": term, "year": year, rowIndexOfYear: this.getCumulativeLineIndexOfYear(parseInt(year as string)) },
@@ -514,10 +519,10 @@ class TermFrequencyChart extends HTMLElement {
 
         this.clearTermData();
         let colorIndex = 0;
-        for (const [term, counts] of Object.entries(termDict)) {
+        for (const [term, counts] of Object.entries(termDict.results)) {
             const dataset: ChartDataset<'bar'> = {
                 label: term,
-                data: counts.map(count => count),
+                data: counts,
                 backgroundColor: function (context: any) {
                     const idx = context.dataIndex;
                     return idx === owner.activeIndex ? 'red' : colors[0];
@@ -526,6 +531,14 @@ class TermFrequencyChart extends HTMLElement {
             if (this.chart) {
                 this.chart.data.labels = years;
                 this.chart.data.datasets.push(dataset);
+                if (this.chart.options.scales && this.chart.options.scales.x) {
+                    this.chart.options.scales.x.ticks = {
+                        ...this.chart.options.scales.x.ticks,
+                        font: {
+                            size: 16, // Set the desired font size here
+                        },
+                    };
+                }
             }
             colorIndex++;
         }
@@ -653,7 +666,7 @@ class TermNavigator extends HTMLElement {
                     const date = record.date;
                     const dateString = '<span class="date">' + (new Date(date * 1000).toISOString().split('T')[0]) + '</span>';
                     const title = '<span class="atlantic-title">' + record.title + '</span>';
-                    const snip = highlightSnippet(record.snippet);
+                    const snip = highlightSnippet(record.snip);
                     const line1 = document.createElement('div');
                     line1.className = 'scroll-item-line';
                     line1.innerHTML = title + ' ' + snip;
@@ -667,8 +680,8 @@ class TermNavigator extends HTMLElement {
                     });
                     item.textContent = '';
                     item.appendChild(line1);
-                    const authorObjs = record.author_data;
-                    const authorList = authorObjs.map((obj: any) => `<span class="author" style="cursor: pointer;" onclick="selectAuthor('${obj.name}')">${obj.name} (${obj.count})</span>`).join(', ');
+                    const authorObjs = record.authors;
+                    const authorList = authorObjs.map((obj: any) => `<span class="author" style="cursor: pointer;" onclick="selectAuthor('${obj.author_name}')">${obj.author_name} (${obj.article_count})</span>`).join(', ');
                     const line2 = document.createElement('div');
                     line2.className = 'scroll-item-line';
                     line2.innerHTML = dateString + '<span>  </span>' + authorList;
@@ -806,7 +819,7 @@ class TermNavigator extends HTMLElement {
     }
 
     handleChange() {
-        clearPendingCache();
+        // clearPendingCache();
         const query = this.getQuery();
         if (this.listCache) {
             this.listCache.updateQuery(query);
@@ -845,31 +858,42 @@ customElements.define('term-navigator', TermNavigator);
 //   return queryKey + ": " + blockIndex;
 // }
 
-function isPending(query: any, blockIndex: number) {
-    const key = JSON.stringify(query) + blockIndex;
-    const record = pendingQueries[key];
-    if (record) {
-        const time = Date.now() - record.time;
-        if (time > 2 * 1000) {
-            delete pendingQueries[key];
-            return false;
-        }
-    } else {
-        return false;
-    }
-    return pendingQueries[key];
-}
+// function isPending(query: any, blockIndex: number) {
+//     const key = JSON.stringify(query) + blockIndex;
+//     const record = pendingQueries[key];
+//     if (record) {
+//         const time = Date.now() - record.time;
+//         if (time > 2 * 1000) {
+//             delete pendingQueries[key];
+//             return false;
+//         }
+//     } else {
+//         return false;
+//     }
+//     return pendingQueries[key];
+// }
 
-function addToPendingCache(query: any, blockIndex: number) {
-    const key = JSON.stringify(query) + blockIndex;
-    if (!pendingQueries[key]) {
-        pendingQueries[key] = { query: query, blockIndex: blockIndex, time: Date.now() };
-    }
-}
+// function addToPendingCache(query: any, blockIndex: number) {
+//     const key = JSON.stringify(query) + blockIndex;
+//     if (!pendingQueries[key]) {
+//         pendingQueries[key] = { query: query, blockIndex: blockIndex, time: Date.now() };
+//     }
+// }
 
-function clearPendingCache() {
-    pendingQueries = {};
-}
+// function clearOldPendingCacheEntries() {
+//     const currentTime = Date.now();
+//     for (const key in pendingQueries) {
+//         const record = pendingQueries[key];
+//         const time = currentTime - record.time;
+//         if (time > 2 * 1000) {
+//             delete pendingQueries[key];
+//         }
+//     }
+// }
+
+// function clearPendingCache() {
+//     pendingQueries = {};
+// }
 
 function initializeDataCallbackCache(query: any) {
     const key = JSON.stringify(query);
@@ -880,52 +904,54 @@ function initializeDataCallbackCache(query: any) {
 }
 
 async function getAllRecords(query: any, sendResponse: (s: any) => void, retryIndex: number = 0) {
-    const queryKey = JSON.stringify(query);
-    if (cacheForGetAllRecords[queryKey] && retryIndex === 0) {
-        sendResponse(cacheForGetAllRecords[queryKey]);
-        return;
-    }
-    if (cacheForGetAllRecords[queryKey]) {
-        // At some point the query came back with a result and sendResponse was called; this is an unnecessary retry.
-        return;
-    }
-    // retryGetAllRecords(query, sendResponse, retryIndex + 1);
-    if (isPending(queryKey, 0)) {
-        return;
-    }
-    addToPendingCache(query, 0);
+    // const queryKey = JSON.stringify(query);
+    // if (cacheForGetAllRecords[queryKey] && retryIndex === 0) {
+    //     sendResponse(cacheForGetAllRecords[queryKey]);
+    //     return;
+    // }
+    // if (cacheForGetAllRecords[queryKey]) {
+    //     // At some point the query came back with a result and sendResponse was called; this is an unnecessary retry.
+    //     return;
+    // }
+    // // retryGetAllRecords(query, sendResponse, retryIndex + 1);
+    // clearOldPendingCacheEntries();
+    // if (isPending(queryKey, 0)) {
+    //     return;
+    // }
+    // addToPendingCache(query, 0);
     const queryDict = JSON.parse(JSON.stringify(query));
     // Serialize array values as JSON strings to preserve their structure
     const queryString = new URLSearchParams(queryDict).toString();
     const url = getFetchUrl() + '/request?' + queryString;
-    try {
-        let response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        let jsonResponse = await response.json();
-        // console.log('getAllRecords response:', jsonResponse);
-        if (jsonResponse.error) {
-            console.error('Error in response:', jsonResponse.error);
-            console.error('Query:', JSON.stringify(queryDict));
-        } else {
-            if (!cacheForGetAllRecords[queryKey]) {
-                // Another version of this query might have been received and processed in the meantime.
-                sendResponse(jsonResponse.results);
-            }
-            cacheForGetAllRecords[queryKey] = jsonResponse.results;
-        }
-    } catch (error) {
-        console.error('Error fetching block:', error);
-        console.error('Query:', JSON.stringify(queryDict));
-        delete pendingQueries[queryKey]; // Prevent infinite retries
-        return null;
-    }
+    await fetchSingle(url, sendResponse);
+    // try {
+    //     let response = await fetch(url, {
+    //         method: 'GET',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         }
+    //     });
+    //     if (!response.ok) {
+    //         throw new Error(`HTTP error! status: ${response.status}`);
+    //     }
+    //     let jsonResponse = await response.json();
+    //     // console.log('getAllRecords response:', jsonResponse);
+    //     if (jsonResponse.error) {
+    //         console.error('Error in response:', jsonResponse.error);
+    //         console.error('Query:', JSON.stringify(queryDict));
+    //     } else {
+    //         if (!cacheForGetAllRecords[queryKey]) {
+    //             // Another version of this query might have been received and processed in the meantime.
+    //             sendResponse(jsonResponse.results);
+    //         }
+    //         cacheForGetAllRecords[queryKey] = jsonResponse.results;
+    //     }
+    // } catch (error) {
+    //     console.error('Error fetching block:', error);
+    //     console.error('Query:', JSON.stringify(queryDict));
+    //     delete pendingQueries[queryKey]; // Prevent infinite retries
+    //     return null;
+    // }
 }
 
 function processNewlyArrivedData(query: any, blockIndex: number, response: any) {
@@ -971,10 +997,11 @@ function getRecord(query: any, index: number, sendResponse: (response: any) => v
 // }
 
 function fetchBlockCount(query: any, callback: (response: any) => void) {
-    if (isPending(query, -1)) {
-        return null;
-    }
-    addToPendingCache(query, -1);
+    // clearOldPendingCacheEntries();
+    // if (isPending(query, -1)) {
+    //     return null;
+    // }
+    // addToPendingCache(query, -1);
     const queryDict = JSON.parse(JSON.stringify(query));
     queryDict.query = 'collectionsetcount';
     const queryString = new URLSearchParams(queryDict).toString();
@@ -983,11 +1010,12 @@ function fetchBlockCount(query: any, callback: (response: any) => void) {
 }
 
 function fetchBlockOffset(query: any, blockIndex: number, callback: (response: any) => void) {
-    if (isPending(query, blockIndex)) {
-        return;
-    }
-    console.log('fetchBlockOffset', query, blockIndex);
-    addToPendingCache(query, blockIndex);
+    // clearOldPendingCacheEntries();
+    // if (isPending(query, blockIndex)) {
+    //     return;
+    // }
+    // console.log('fetchBlockOffset', query, blockIndex);
+    // addToPendingCache(query, blockIndex);
     const queryDict = JSON.parse(JSON.stringify(query));
     queryDict.limit = blockSize;
     queryDict.offset = blockIndex * blockSize;
@@ -996,9 +1024,75 @@ function fetchBlockOffset(query: any, blockIndex: number, callback: (response: a
     fetchSingle(url, callback);
 }
 
+function shouldExecuteFetchSingle(url: string, callback: any): boolean {
+    const record = fetchSingleCache.get(url);
+    if (! record) { 
+        fetchSingleCache.set(url, { url: url, response: null, callback: callback, nextTryTime: Date.now() + 2000 })
+        return true;
+    }
+    if (record.nextTryTime === 0) {
+        // The response is in the cache.  Just call the callback.
+        callback(record.response);
+        return false;
+    }
+    if (record.nextTryTime === -1) {
+        // The fetch failed before.  Don't execute the fetch again.
+        return false;
+    }
+    if (record.nextTryTime > Date.now()) {
+        // The next try time is in the future.  Don't execute the fetch.
+        return false;
+    }
+    record.nextTryTime = Date.now() + 2000;
+    return true;
+}
+
+function fetchSingleSucceeded(url: string, callback: any, response: any) {
+    const record = fetchSingleCache.get(url);
+    if (record) {
+        record.response = response;
+        record.nextTryTime = 0; // Mark as successful
+        callback(response);
+    } else {
+        console.error('No record found for URL:', url);
+    }
+}
+
+function fetchSingleFailed(url: string) {
+    const record = fetchSingleCache.get(url);
+    if (record) {
+        record.nextTryTime = -1; // Mark as failed
+        record.response = null;
+    }
+}
+
+async function fetchSingleScanForRetries() {
+    for (const record of fetchSingleCache.values()) {
+        if (record.nextTryTime > Date.now()) {
+            await fetchSingle(record.url, record.callback);
+        }
+    }
+}
+
+async function startScanningForFetchSingleRetries() {
+    // The risk we're trying to address is that web service requests might get caught behind a cold-starting Lambda function.  
+    // We can periodically check for any requests that are pending
+    // and retry them on the assumption that a Lambda function instance is now free (even though the cold-starting function instance may still be initializing).
+    if (fetchSingleScanInterval) {
+        clearInterval(fetchSingleScanInterval);
+    }
+    fetchSingleScanInterval = setInterval(() => {
+        fetchSingleScanForRetries();
+    }, 5000);
+}
+
 async function fetchSingle(url: string, callback: (response: any) => void) {
     try {
-        const startTime = Date.now();
+        if (! shouldExecuteFetchSingle(url, callback)) {
+            return;
+        }
+        console.log('Fetching:', url);
+        // const startTime = Date.now();
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -1006,11 +1100,12 @@ async function fetchSingle(url: string, callback: (response: any) => void) {
             }
         });
         const jsonResponse = await response.json();
-        const duration = Date.now() - startTime;
-        console.log('Fetch duration (' + url + '):', duration, 'ms');
-        callback(jsonResponse);
+        // const duration = Date.now() - startTime;
+        // console.log('Fetch duration (' + url + '):', duration, 'ms');
+        fetchSingleSucceeded(url, callback, jsonResponse);
     } catch (error) {
         console.error('Error fetching:', url, error);
+        fetchSingleFailed(url);
     }
 }
 
