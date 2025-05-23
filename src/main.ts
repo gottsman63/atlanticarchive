@@ -94,6 +94,11 @@ function flashElement(element: HTMLElement) {
     }, 900);
 }
 
+// function selectAuthor(author: string) {
+//     const event = new CustomEvent('author-selected', { detail: { name: author } });
+//     document.dispatchEvent(event);
+// }
+
 // --------------------------- Date Slider ------------------------------
 class DoubleSlider extends HTMLElement {
     tabName: string;
@@ -213,18 +218,20 @@ class SearchElement extends HTMLElement {
         super();
         this.innerHTML = `
         <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
-          <sl-button id="reset-date-slider" variant="primary" size="medium" pill>Reset Date Slider</sl-button>
-          <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
           <select id="author-select" autocorrect="off" placeholder="Author Name...."></select>
-          <sl-button id="reset-author" variant="primary" size="medium" pill>Reset Author</sl-button>
+          <sl-button id="reset-author" variant="primary" size="medium" pill>Show all Documents</sl-button>
+          <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
         </div>
           `;
 
-        const debouncedHandleInputChange = debounce((e) => this.handleInputChange(e), 750);
+        const debouncedHandleInputChange = debounce((e) => this.handleInputChange(e), 300);
 
         // Attach a single event listener to the parent div
         this.querySelectorAll('sl-input').forEach(input => {
-            input.addEventListener('input', debouncedHandleInputChange);
+            input.addEventListener('input', (e) => {
+                this.clearAuthorField();
+                debouncedHandleInputChange(e);
+            });
             input.addEventListener('sl-clear', (e) => this.handleInputChange(e)); // no need to debounce this
         });
 
@@ -238,12 +245,11 @@ class SearchElement extends HTMLElement {
         const authorSelect = this.querySelector('#author-select') as HTMLSelectElement;
         authorSelect.addEventListener('change', () => this.changeCallback());
 
-        const resetButton = this.querySelector('#reset-date-slider') as HTMLElement;
-        resetButton.addEventListener('click', () => this.resetDateSlider());
-
         const resetAuthorButton = this.querySelector('#reset-author') as HTMLElement;
-        resetAuthorButton.addEventListener('click', () => {
-            this.setAuthor('');
+        resetAuthorButton.addEventListener('click', (e) => {
+            this.clearAuthorField();
+            this.setSearchString('');
+            this.handleInputChange(e);
         });
 
         window.addEventListener("pageshow", (event) => {
@@ -276,7 +282,7 @@ class SearchElement extends HTMLElement {
             load: function (query: String, callback: any) {
                 if (!query.length) callback();
                 getAllRecords({ query: 'authors', searchstring: query }, (result: any) => {
-                    const records: any = result.map((item: any) => ({
+                    const records: any = result.results.map((item: any) => ({
                         id: item.name,
                         name: item.name + ' (' + item.article_count + ')',
                     }));
@@ -291,29 +297,41 @@ class SearchElement extends HTMLElement {
                 const author = item.getAttribute('data-value');
                 if (author) {
                     sessionStorage.setItem('author', author);
+                    sessionStorage.setItem('searchString', '');
+                    const element = this.querySelector('#search-string') as HTMLInputElement;
+                    element.value = '';
+                    this.setResetAuthorButtonVisibility();
                     this.changeCallback();
                 }
             }
         });
     }
 
-    setResetDateRangeButtonVisibility(flag: boolean) {
-        const element = document.querySelector('#reset-date-slider') as DoubleSlider;
+    setResetAuthorButtonVisibility() {
+        const element = document.querySelector('#author-select') as HTMLInputElement;
         if (!element) return;
-        if (flag) {
+        const author = sessionStorage.getItem('author') as string;
+        if (author.length > 0) {
             element.style.visibility = 'visible';
         } else {
             element.style.visibility = 'hidden';
         }
     }
 
-    setResetAuthorButtonVisibility(flag: boolean) {
-        const element = document.querySelector('#reset-author') as HTMLInputElement;
-        if (!element) return;
-        if (flag) {
-            element.style.visibility = 'visible';
-        } else {
+    flashAuthorField() {
+        return;
+        const element = this.querySelector('#reset-author') as HTMLInputElement;
+        if (true) {
             element.style.visibility = 'hidden';
+            setTimeout(() => {
+                element.style.visibility = 'visible';
+            }, 300);
+            setTimeout(() => {
+                element.style.visibility = 'hidden';
+            }, 600);
+            setTimeout(() => {
+                element.style.visibility = 'visible';
+            }, 900);
         }
     }
 
@@ -321,7 +339,8 @@ class SearchElement extends HTMLElement {
         if (!this.tomSelect) {
             return '';
         }
-        const author = this.tomSelect.getValue();
+        const author = sessionStorage.getItem('author');
+        // const author = this.tomSelect.control_input.value;
         return author as string;
     }
 
@@ -339,13 +358,36 @@ class SearchElement extends HTMLElement {
     }
 
     setAuthor(s: string) {
+        // const element = this.querySelector('#author-select') as HTMLInputElement;
+        // element.value = s;
+        sessionStorage.setItem('searchString', '');
+        const searchElement = this.querySelector('#search-string') as HTMLInputElement;
+        searchElement.value = '';
         sessionStorage.setItem('author', s);
-        const element = this.querySelector('#author-select') as HTMLInputElement;
-        element.value = s;
         if (this.tomSelect) {
-            this.tomSelect.setValue(s);
+            this.tomSelect.clear();
+            // this.tomSelect.control_input.value = s;
+            // this.setResetAuthorButtonVisibility();
+            // this.tomSelect.addOption({ value: s, text: s });
+            // this.tomSelect.setValue(s);
+            // this.tomSelect.open();
+            this.tomSelect.setTextboxValue(s);
+            // this.tomSelect.refreshOptions(true);
+            this.tomSelect.load(s);
+            // this.tomSelect.open();
+            this.tomSelect.focus();
             this.changeCallback();
-            this.setResetAuthorButtonVisibility(s.length > 0);
+            // this.setResetAuthorButtonVisibility(s.length > 0);
+        }
+    }
+
+    clearAuthorField() {
+        const element = this.querySelector('#author-select') as HTMLInputElement;
+        if (element) {
+            element.value = '';
+            sessionStorage.setItem('author', '');
+            this.tomSelect.clear();
+            this.setResetAuthorButtonVisibility();
         }
     }
 
@@ -461,9 +503,10 @@ class TermFrequencyChart extends HTMLElement {
         }
     }
 
-    setQueryString(queryString: any) {
-        const query = { query: "articlesyearcounts", searchstring: queryString };
-        getAllRecords(query, (result: any) => {
+    setQuery(query: any) {
+        const queryCopy = JSON.parse(JSON.stringify(query));
+        queryCopy.query = 'articlesyearcounts';
+        getAllRecords(queryCopy, (result: any) => {
             this.setTermsData(result);
         });
     }
@@ -481,7 +524,7 @@ class TermFrequencyChart extends HTMLElement {
         if (!firstDataset) return -1;
         const datasetIndex = year - 1857;
         let rowCount = 0
-        for (let i = firstDataset.data.length - 1; i >= datasetIndex; i--) {
+        for (let i = firstDataset.data.length - 1; i > datasetIndex; i--) {
             rowCount += firstDataset.data[i] as number;
         }
         // for (let i = 0; i < datasetIndex; i++) {
@@ -496,9 +539,9 @@ class TermFrequencyChart extends HTMLElement {
         const dataset = this.chart.data.datasets[0];
         if (!dataset) return;
         let cumulativeLineCount = 0
-        for (let i = dataset.data.length - 1; i > 0 ; i--) {
+        for (let i = dataset.data.length - 1; i > 0; i--) {
             cumulativeLineCount += dataset.data[i] as number;
-            if (cumulativeLineCount >= index) {
+            if (cumulativeLineCount > index) {
                 this.activeIndex = i;
                 break;
             }
@@ -522,7 +565,7 @@ class TermFrequencyChart extends HTMLElement {
         for (const [term, counts] of Object.entries(termDict.results)) {
             const dataset: ChartDataset<'bar'> = {
                 label: term,
-                data: counts,
+                data: counts as any as number[],
                 backgroundColor: function (context: any) {
                     const idx = context.dataIndex;
                     return idx === owner.activeIndex ? 'red' : colors[0];
@@ -567,7 +610,7 @@ class TermNavigator extends HTMLElement {
 
     constructor() {
         super();
-        const debouncedHandleChange = debounce(() => this.handleChange(), 750);
+        const debouncedHandleChange = debounce(() => this.handleChange(), 300);
 
         this.termFrequencyChart = new TermFrequencyChart();
         this.appendChild(this.termFrequencyChart);
@@ -592,41 +635,6 @@ class TermNavigator extends HTMLElement {
         this.appendChild(this.searchElement);
         this.searchElement.style.position = 'relative';
         this.searchElement.style.left = '40px';
-        // this.searchElement.addEventListener('name-selected', (event: any) => {
-        // const name = event.detail.name;
-        // this.termRowHolder.addTermsToTopmostRow(['[' + name + ']']);
-        // });
-        // this.termRowHolder = new TermRowHolder();
-        // this.appendChild(this.termRowHolder);
-        // this.termRowHolder.addEventListener('queryChanged', (_event) => {
-        //     const checkedTerms = this.termRowHolder.getCheckedTerms();
-        //     const tentativeTerms = this.termRowHolder.getTentativeTerms();
-        //     const terms = checkedTerms.concat(tentativeTerms);
-        //     const trimmedTerms = terms ? (terms.map(term => term.trim()).filter(term => term !== '')) : [];
-        //     this.searchElement.setSearchString(trimmedTerms.join(' '));
-        //     this.resetMatchCounts();
-        //     this.updateResetYearSliderButton();
-        //     this.updateResetAuthorButton
-        //     this.dehydrate();
-        // });
-        // this.termRowHolder.addEventListener('selectionChanged', (_event) => {
-        //     const searchTerms = this.termRowHolder.getSelectedTerms();
-        //     if (searchTerms.length === 0) {
-        //         return;
-        //     }
-        //     const searchTermString = searchTerms.join(' ');
-        //     const relatedQuery = { "query": "relatedterms", "terms": searchTermString };
-        //     // console.log('relatedQuery:', relatedQuery);
-        //     getAllRecords(relatedQuery, (result: any) => {
-        //         const relatedTerms: any = result;
-        //         const terms = relatedTerms.map((a: string[]) => a[0]);
-        //         if (terms.length > 0) {
-        //             this.termRowHolder.addRow(terms);
-        //         }
-        //         this.resetMatchCounts();
-        //         this.dehydrate();
-        //     });
-        // });
 
         const resultList = document.createElement('div');
         resultList.id = 'results';
@@ -650,7 +658,6 @@ class TermNavigator extends HTMLElement {
             console.error('Scroll area not found:', this.scrollAreaName);
             return;
         }
-        this.selectAuthor = this.selectAuthor.bind(this);
         this.vListRenderCallback = (index, query, incomingItem) => {
             let item;
             if (!incomingItem) {
@@ -681,16 +688,61 @@ class TermNavigator extends HTMLElement {
                     item.textContent = '';
                     item.appendChild(line1);
                     const authorObjs = record.authors;
-                    const authorList = authorObjs.map((obj: any) => `<span class="author" style="cursor: pointer;" onclick="selectAuthor('${obj.author_name}')">${obj.author_name} (${obj.article_count})</span>`).join(', ');
                     const line2 = document.createElement('div');
                     line2.className = 'scroll-item-line';
-                    line2.innerHTML = dateString + '<span>  </span>' + authorList;
+                    // Create author spans and attach event listeners
+                    line2.innerHTML = dateString + '<span>  </span>';
+                    authorObjs.forEach((obj: any) => {
+                        const authorSpan = document.createElement('span');
+                        authorSpan.className = 'author';
+                        authorSpan.style.cursor = 'pointer';
+                        authorSpan.textContent = `${obj.author_name} (${obj.article_count})`;
+                        authorSpan.addEventListener('click', () => {
+                            this.selectAuthor(obj.author_name);
+                        });
+                        line2.appendChild(authorSpan);
+                        line2.appendChild(document.createTextNode(', '));
+                    });
+                    // Remove trailing comma and space if any authors exist
+                    if (authorObjs.length > 0) {
+                        line2.removeChild(line2.lastChild as Node);
+                    }
                     item.appendChild(line2);
                     const line3 = document.createElement('div');
                     line3.className = 'scroll-item-line';
                     line3.innerHTML = '<span class="blurb">' + record.blurb + '</span>';
+                    // line3.title = record.blurb;
+                    // To increase the font size of the tooltip, set the style on line3's title attribute using a custom tooltip library or by creating a custom tooltip element.
+                    // The native browser tooltip (from the title attribute) cannot have its font size changed via CSS.
+                    // Example: create a custom tooltip div.
+
+                    line3.addEventListener('mouseenter', (e) => {
+                        let tooltip = document.createElement('div');
+                        tooltip.className = 'custom-tooltip';
+                        tooltip.textContent = record.blurb;
+                        document.body.appendChild(tooltip);
+                        tooltip.style.position = 'fixed';
+                        tooltip.style.left = e.clientX + 10 + 'px';
+                        tooltip.style.top = e.clientY + 10 + 'px';
+                        tooltip.style.fontSize = '1.2em'; // Larger font size
+                        tooltip.style.background = '#fff';
+                        tooltip.style.border = '1px solid #ccc';
+                        tooltip.style.padding = '8px 12px';
+                        tooltip.style.borderRadius = '6px';
+                        tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                        tooltip.style.zIndex = '9999';
+
+                        line3.addEventListener('mousemove', (moveEvent) => {
+                            tooltip.style.left = moveEvent.clientX + 10 + 'px';
+                            tooltip.style.top = moveEvent.clientY + 10 + 'px';
+                        });
+
+                        line3.addEventListener('mouseleave', () => {
+                            tooltip.remove();
+                        }, { once: true });
+                    });
                     item.appendChild(line3);
-                    item.style.cursor = 'pointer';
+                    // item.style.cursor = 'pointer';
                 } else {
                     item.textContent = "Error loading record!";
                 }
@@ -723,18 +775,16 @@ class TermNavigator extends HTMLElement {
         this.initialize();
         this.rehydrate();
         this.handleChange();
-        this.updateResetYearSliderButton();
         this.updateResetAuthorButton();
     }
 
     selectAuthor(author: string) {
-        console.log('Selected author:', author);
+        this.searchElement.setAuthor(author);
     }
 
     setDateRange(startDateSeconds: number, endDateSeconds: number) {
         this.startDateSeconds = startDateSeconds;
         this.endDateSeconds = endDateSeconds;
-        this.updateResetYearSliderButton();
     }
 
     resetDateSlider() {
@@ -756,15 +806,9 @@ class TermNavigator extends HTMLElement {
         // });
     }
 
-    updateResetYearSliderButton() {
-        if (this.searchElement) {
-            this.searchElement.setResetDateRangeButtonVisibility(!this.dateSlider.isAtMaxRange())
-        }
-    }
-
     updateResetAuthorButton() {
         if (this.searchElement) {
-            this.searchElement.setResetAuthorButtonVisibility(this.searchElement.getAuthor().length > 0);
+            this.searchElement.setResetAuthorButtonVisibility();
         }
     }
 
@@ -796,7 +840,6 @@ class TermNavigator extends HTMLElement {
         const defaultStartYear = 1857;
         const defaultEndYear = new Date().getFullYear();
         this.searchElement.setDateRange(memento.startYear || defaultStartYear, memento.endYear || defaultEndYear);
-        this.updateResetYearSliderButton();
         this.updateResetAuthorButton();
     }
 
@@ -813,7 +856,7 @@ class TermNavigator extends HTMLElement {
                     query,
                     'tabid',
                     getQueryTotal,
-                (scrollIndex: number) => this.termFrequencyChart.setLineIndexHighlight(scrollIndex))
+                    (scrollIndex: number) => this.termFrequencyChart.setLineIndexHighlight(scrollIndex))
             }
         });
     }
@@ -834,8 +877,7 @@ class TermNavigator extends HTMLElement {
         // this.termRowHolder.addTermsToTopmostRow(trimmedNonTentativeTerms);
         // this.termRowHolder.selectTermsForCheck(trimmedNonTentativeTerms);
         // this.resetMatchCounts();
-
-        this.termFrequencyChart.setQueryString(query.searchstring);
+        this.termFrequencyChart.setQuery(query);
     }
 
     getQuery(): { query: string, startdate: number, enddate: number, searchstring: string, author: string, terms: string[] | null } {
@@ -903,7 +945,7 @@ function initializeDataCallbackCache(query: any) {
     return key;
 }
 
-async function getAllRecords(query: any, sendResponse: (s: any) => void, retryIndex: number = 0) {
+async function getAllRecords(query: any, sendResponse: (s: any) => void) {
     // const queryKey = JSON.stringify(query);
     // if (cacheForGetAllRecords[queryKey] && retryIndex === 0) {
     //     sendResponse(cacheForGetAllRecords[queryKey]);
@@ -1026,7 +1068,7 @@ function fetchBlockOffset(query: any, blockIndex: number, callback: (response: a
 
 function shouldExecuteFetchSingle(url: string, callback: any): boolean {
     const record = fetchSingleCache.get(url);
-    if (! record) { 
+    if (!record) {
         fetchSingleCache.set(url, { url: url, response: null, callback: callback, nextTryTime: Date.now() + 2000 })
         return true;
     }
@@ -1088,7 +1130,7 @@ async function startScanningForFetchSingleRetries() {
 
 async function fetchSingle(url: string, callback: (response: any) => void) {
     try {
-        if (! shouldExecuteFetchSingle(url, callback)) {
+        if (!shouldExecuteFetchSingle(url, callback)) {
             return;
         }
         console.log('Fetching:', url);

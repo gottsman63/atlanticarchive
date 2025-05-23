@@ -144,7 +144,6 @@ export class VirtualizedList {
         //     return;
         // }
         if (this.itemRenderer == null) { return ; }
-        const queryRetryDelay = 2 * 1000;
         const { startIndex, endIndex } = this.calculateVisibleRange();
         // Add new items to the DOM
         for (let i = startIndex; i <= endIndex; i++) {

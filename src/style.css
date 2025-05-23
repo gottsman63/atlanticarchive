@@ -8,7 +8,7 @@
   font-family:       var(--sl-font-sans);
   color:             var(--sl-text-primary);
   font-size:         var(--sl-font-size-medium);
-  width:          00px;
+  width:          300px;
 }
 
 /* 2) Focus state */
@@ -23,7 +23,7 @@
   border-radius:    var(--sl-border-radius-pill);
   padding:          0 var(--sl-spacing-small);
   margin:           var(--sl-spacing-x-small) var(--sl-spacing-x-small) 0 0;
-  font-size:        var(--sl-font-size-medium);
+  font-size:        var(--sl-font-size-large);
   display:          inline-flex;
   align-items:      center;
 }
@@ -154,6 +154,7 @@ a:hover {
   color: var(--sl-color-primary-600, #3b82f6);
   font-size: 1.0em;
   font-weight: bold;
+  cursor: pointer;
 }
 
 .atlantic-title:hover {
