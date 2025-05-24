@@ -6,6 +6,7 @@ import TomSelect from 'tom-select';
 // import 'tom-select/dist/css/tom-select.css';
 import 'tom-select/dist/css/tom-select.default.css';
 import './style.css'
+import LZString from 'lz-string';
 
 
 // Import noUiSlider
@@ -93,11 +94,6 @@ function flashElement(element: HTMLElement) {
         element.style.visibility = 'visible';
     }, 900);
 }
-
-// function selectAuthor(author: string) {
-//     const event = new CustomEvent('author-selected', { detail: { name: author } });
-//     document.dispatchEvent(event);
-// }
 
 // --------------------------- Date Slider ------------------------------
 class DoubleSlider extends HTMLElement {
@@ -716,31 +712,31 @@ class TermNavigator extends HTMLElement {
                     // The native browser tooltip (from the title attribute) cannot have its font size changed via CSS.
                     // Example: create a custom tooltip div.
 
-                    line3.addEventListener('mouseenter', (e) => {
-                        let tooltip = document.createElement('div');
-                        tooltip.className = 'custom-tooltip';
-                        tooltip.textContent = record.blurb;
-                        document.body.appendChild(tooltip);
-                        tooltip.style.position = 'fixed';
-                        tooltip.style.left = e.clientX + 10 + 'px';
-                        tooltip.style.top = e.clientY + 10 + 'px';
-                        tooltip.style.fontSize = '1.2em'; // Larger font size
-                        tooltip.style.background = '#fff';
-                        tooltip.style.border = '1px solid #ccc';
-                        tooltip.style.padding = '8px 12px';
-                        tooltip.style.borderRadius = '6px';
-                        tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                        tooltip.style.zIndex = '9999';
+                    // line3.addEventListener('mouseenter', (e) => {
+                    //     let tooltip = document.createElement('div');
+                    //     tooltip.className = 'custom-tooltip';
+                    //     tooltip.textContent = record.blurb;
+                    //     document.body.appendChild(tooltip);
+                    //     tooltip.style.position = 'fixed';
+                    //     tooltip.style.left = e.clientX + 10 + 'px';
+                    //     tooltip.style.top = e.clientY + 10 + 'px';
+                    //     tooltip.style.fontSize = '1.2em'; // Larger font size
+                    //     tooltip.style.background = '#fff';
+                    //     tooltip.style.border = '1px solid #ccc';
+                    //     tooltip.style.padding = '8px 12px';
+                    //     tooltip.style.borderRadius = '6px';
+                    //     tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                    //     tooltip.style.zIndex = '9999';
 
-                        line3.addEventListener('mousemove', (moveEvent) => {
-                            tooltip.style.left = moveEvent.clientX + 10 + 'px';
-                            tooltip.style.top = moveEvent.clientY + 10 + 'px';
-                        });
+                    //     line3.addEventListener('mousemove', (moveEvent) => {
+                    //         tooltip.style.left = moveEvent.clientX + 10 + 'px';
+                    //         tooltip.style.top = moveEvent.clientY + 10 + 'px';
+                    //     });
 
-                        line3.addEventListener('mouseleave', () => {
-                            tooltip.remove();
-                        }, { once: true });
-                    });
+                    //     line3.addEventListener('mouseleave', () => {
+                    //         tooltip.remove();
+                    //     }, { once: true });
+                    // });
                     item.appendChild(line3);
                     // item.style.cursor = 'pointer';
                 } else {
@@ -773,7 +769,7 @@ class TermNavigator extends HTMLElement {
 
     async connectedCallback() {
         this.initialize();
-        this.rehydrate();
+        // this.rehydrate();
         this.handleChange();
         this.updateResetAuthorButton();
     }
@@ -812,42 +808,11 @@ class TermNavigator extends HTMLElement {
         }
     }
 
-    dehydrate() {
-        // const termHolderMemento = this.termRowHolder.dehydrate();
-        const years = this.dateSlider.getRange();
-        const memento = {
-            termRowHolder: null, //termHolderMemento,
-            searchElement: this.searchElement.getSearchString(),
-            author: this.searchElement.getAuthor(),
-            startYear: years.startYear,
-            endYear: years.endYear
-        };
-        sessionStorage.setItem('memento', JSON.stringify(memento));
-    }
-
-    rehydrate() {
-        const memento = JSON.parse(sessionStorage.getItem('memento') as string);
-        if (!memento) {
-            return;
-        }
-        // if (this.termRowHolder) {
-        //     this.termRowHolder.rehydrate(memento.termRowHolder);
-        // } else {
-        //     console.error('termRowHolder is not initialized.');
-        // }
-        this.searchElement.setSearchString(memento.searchElement || '');
-        this.searchElement.setAuthor(memento.author || '');
-        const defaultStartYear = 1857;
-        const defaultEndYear = new Date().getFullYear();
-        this.searchElement.setDateRange(memento.startYear || defaultStartYear, memento.endYear || defaultEndYear);
-        this.updateResetAuthorButton();
-    }
-
     async initializeListCache(query: any) {
         getQueryTotal(query, (response: any) => {
             if (response) {
                 const totalItemCount = response.total_count;
-                setTotal(query, totalItemCount);
+                setTotalRecordCount(query, totalItemCount);
                 this.listCache = new VirtualizedList(
                     this.scrollAreaName,
                     this.vListRenderCallback,
@@ -1003,7 +968,7 @@ function processNewlyArrivedData(query: any, blockIndex: number, response: any) 
     const key = initializeDataCallbackCache(query);
     for (let i = blockSize * blockIndex; i < blockSize * blockIndex + records.length; i++) {
         const record = records[recordIndex]
-        saveToCache(query, i, record);
+        saveRecordToCache(query, i, record);
         const callback = dataCallbackCache[key].callbacks[i];
         if (callback) {
             callback(record);
@@ -1020,7 +985,7 @@ function getQueryTotal(query: any, callback: (response: any) => void) {
 function getRecord(query: any, index: number, sendResponse: (response: any) => void) {
     const blockIndex = Math.floor(index / blockSize);
     const key = initializeDataCallbackCache(query);
-    const record = getFromCache(query, index);
+    const record = getRecordFromCache(query, index);
     if (record) {
         sendResponse(record);
         return;
@@ -1191,27 +1156,42 @@ function getFetchUrl() {
    -------------------------------------------------------------------------- */
 
 // Store total count of records for a query
-function setTotal(query: any, total: number) {
+function setTotalRecordCount(query: any, total: number) {
     const queryKey = normalizeQuery(query);
     sessionStorage.setItem(queryKey, JSON.stringify(total));
 }
 
 function normalizeQuery(query: any) {
-    return JSON.stringify(query, Object.keys(query).sort());
+    return LZString.compressToUTF16(JSON.stringify(query, Object.keys(query).sort()));
 }
 
-function saveToCache(query: any, index: number, record: any) {
+function saveRecordToCache(query: any, index: number, record: any) {
     const queryStr = normalizeQuery(query);
     const key = queryStr + ':' + index;
-    sessionStorage.setItem(key, JSON.stringify(record));
-}
-
-function getFromCache(query: any, index: number): any {
-    const queryStr = normalizeQuery(query);
-    const key = queryStr + ':' + index;
-    const record = sessionStorage.getItem(key);
-    if (record) {
-        return JSON.parse(record);
+    try {
+        sessionStorage.setItem(key, JSON.stringify(LZString.compressToUTF16(record)));
+    } catch (error: any) {
+        if (error.name === 'QuotaExceededError') {
+            // If sessionStorage is full, clear it and try again once
+            sessionStorage.clear();
+            try {
+                sessionStorage.setItem(key, JSON.stringify(LZString.compressToUTF16(record)));
+            } catch (e) {
+                console.error('Failed to save record to cache after clearing sessionStorage:', e);
+            }
+        } else {
+            console.error('Error saving record to cache:', error);
+        }
     }
-    return null;
+}
+
+function getRecordFromCache(query: any, index: number): any {
+    const queryStr = normalizeQuery(query);
+    const key = queryStr + ':' + index;
+    const compressedRecord = sessionStorage.getItem(key);
+    let record: string | null = null;
+    if (compressedRecord) {
+        record = LZString.decompressFromUTF16(compressedRecord);
+    }
+    return record ? JSON.parse(record) : null;
 }
