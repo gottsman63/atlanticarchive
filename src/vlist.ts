@@ -1,3 +1,5 @@
+import { ResultLineItem } from "./result-line-item";
+
 function setValue(key: string, value: any) {
     if (value === null) {
         console.log('setValue: value is null for key:', key);
@@ -17,7 +19,7 @@ function getValue(key: string) {
 
 export class VirtualizedList {
     containerName: string;
-    itemRenderer: ((index: number, query: any, incomingItem: HTMLElement | null) => HTMLElement) | null = null;
+    itemRenderer: ((index: number, query: any, incomingItem: ResultLineItem | null) => ResultLineItem) | null = null;
     totalItems: number;
     rowHeight: number;
     buffer: number;
@@ -31,7 +33,7 @@ export class VirtualizedList {
     scrollCallback: ((scrollTop: number) => void) | null = null;
 
     constructor(containerName: string, 
-        itemRenderer: ((index: number, query: any, incomingItem: HTMLElement | null) => HTMLElement) | null = null, 
+        itemRenderer: ((index: number, query: any, incomingItem: ResultLineItem | null) => ResultLineItem) | null = null, 
         totalItems: number, 
         rowHeight: number, 
         query: string, 
@@ -151,7 +153,7 @@ export class VirtualizedList {
             if (!this.visibleItems.has(i)) {
                 itemElement = this.prepVisibleItem(i);
             } else {
-                itemElement = this.visibleItems.get(i) as HTMLElement;
+                itemElement = this.visibleItems.get(i) as ResultLineItem;
                 // const creationTime = (itemElement as any).creationTime;
                 if (itemElement.textContent && itemElement.textContent.startsWith("Loading...")) { //&& (Date.now() - creationTime > queryRetryDelay)) {
                     this.itemRenderer(i, this.query, itemElement);

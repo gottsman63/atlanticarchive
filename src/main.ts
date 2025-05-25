@@ -19,6 +19,7 @@ import './term-row.js';
 // import { TermRowHolder } from './term-row-holder';
 import { VirtualizedList } from './vlist';
 import { Chart, ChartDataset, Colors, registerables } from 'chart.js';
+import { ResultLineItem } from './result-line-item.js';
 Chart.register(...registerables);
 
 const fetchUrl = 'https://ocf23hr7gvdwnjvqjdxkyfn72q0krmpf.lambda-url.eu-west-1.on.aws/'; // Default URL
@@ -66,21 +67,29 @@ function loadPage(url: string, newTab = false) {
     document.body.removeChild(a);
 }
 
-function highlightSnippet(snippet: string | null): string {
-    try {
-        if (snippet) {
-            let s = snippet.replace(/<em>/g, '<span class="emphasis">');
-            let s2 = s.replace(/<\/em>/g, '</span>');
-            let snip = '<span class="snippet">' + s2 + '</span>';
-            return snip;
-        } else {
-            return "";
-        }
-    } catch (error) {
-        console.error("Error in highlightSnippet:", error);
-        return "";
-    }
+function hoverCover(url: string) {
+    console.log('hoverCover', url);
 }
+
+function selectCover(url: string) {
+    console.log('selectCover', url);
+}
+
+// function highlightSnippet(snippet: string | null): string {
+//     try {
+//         if (snippet) {
+//             let s = snippet.replace(/<em>/g, '<span class="emphasis">');
+//             let s2 = s.replace(/<\/em>/g, '</span>');
+//             let snip = '<span class="snippet">' + s2 + '</span>';
+//             return snip;
+//         } else {
+//             return "";
+//         }
+//     } catch (error) {
+//         console.error("Error in highlightSnippet:", error);
+//         return "";
+//     }
+// }
 
 function flashElement(element: HTMLElement) {
     element.style.visibility = 'hidden';
@@ -304,14 +313,14 @@ class SearchElement extends HTMLElement {
     }
 
     setResetAuthorButtonVisibility() {
-        const element = document.querySelector('#author-select') as HTMLInputElement;
-        if (!element) return;
-        const author = sessionStorage.getItem('author') as string;
-        if (author.length > 0) {
-            element.style.visibility = 'visible';
-        } else {
-            element.style.visibility = 'hidden';
-        }
+        // const element = document.querySelector('#author-select') as HTMLInputElement;
+        // if (!element) return;
+        // const author = sessionStorage.getItem('author') as string;
+        // if (author.length > 0) {
+        //     element.style.visibility = 'visible';
+        // } else {
+        //     element.style.visibility = 'hidden';
+        // }
     }
 
     flashAuthorField() {
@@ -597,7 +606,7 @@ class TermNavigator extends HTMLElement {
     dateSlider: DoubleSlider;
     scrollAreaName: string = 'scroll-area';
     scrollArea: HTMLElement | null = null;
-    vListRenderCallback: ((index: number, query: any, incomingItem: HTMLElement | null) => HTMLElement) | null = null;
+    vListRenderCallback: ((index: number, query: any, incomingItem: ResultLineItem | null) => ResultLineItem) | null = null;
     listCache: VirtualizedList | null = null;
     startDateSeconds: number = 0;
     endDateSeconds: number = 0;
@@ -654,95 +663,124 @@ class TermNavigator extends HTMLElement {
             console.error('Scroll area not found:', this.scrollAreaName);
             return;
         }
-        this.vListRenderCallback = (index, query, incomingItem) => {
+        this.vListRenderCallback = (index: number, query: any, incomingItem: ResultLineItem | null) => {
             let item;
             if (!incomingItem) {
-                item = document.createElement('div');
-                item.classList.add('scroll-item'); // Apply the CSS class to the item
-                item.style.height = String(this.rowHeightInPixels) + 'px'; // Ensure row height matches `itemHeight`
-                item.textContent = "Loading..." + index; // + ' ' + this.tabName + ' ' + JSON.stringify(query); // Placeholder content
+                item = new ResultLineItem(
+                    (author) => this.searchElement.setAuthor(author),
+                    (url) => loadPage(url),
+                    (url) => hoverCover(url),
+                    (url) => selectCover(url),
+                    this.rowHeightInPixels
+                );
             } else {
                 item = incomingItem;
             }
             getRecord(query, index, (record: any) => {
                 if (record) {
-                    const date = record.date;
-                    const dateString = '<span class="date">' + (new Date(date * 1000).toISOString().split('T')[0]) + '</span>';
-                    const title = '<span class="atlantic-title">' + record.title + '</span>';
-                    const snip = highlightSnippet(record.snip);
-                    const line1 = document.createElement('div');
-                    line1.className = 'scroll-item-line';
-                    line1.innerHTML = title + ' ' + snip;
-                    line1.title = '    Ctrl/Cmd-Click to open...\n' + record.link + '\n    ...in a new tab.';
-                    line1.addEventListener('click', (event) => {
-                        if (event.ctrlKey || event.metaKey || event.button === 1) { // Check if Ctrl key (or Cmd key on macOS) is pressed
-                            loadPage(record.link, true); // Open in new tab
-                        } else {
-                            loadPage(record.link); // Open in current tab
-                        }
-                    });
-                    item.textContent = '';
-                    item.appendChild(line1);
-                    const authorObjs = record.authors;
-                    const line2 = document.createElement('div');
-                    line2.className = 'scroll-item-line';
-                    // Create author spans and attach event listeners
-                    line2.innerHTML = dateString + '<span>  </span>';
-                    authorObjs.forEach((obj: any) => {
-                        const authorSpan = document.createElement('span');
-                        authorSpan.className = 'author';
-                        authorSpan.style.cursor = 'pointer';
-                        authorSpan.textContent = `${obj.author_name} (${obj.article_count})`;
-                        authorSpan.addEventListener('click', () => {
-                            this.selectAuthor(obj.author_name);
-                        });
-                        line2.appendChild(authorSpan);
-                        line2.appendChild(document.createTextNode(', '));
-                    });
-                    // Remove trailing comma and space if any authors exist
-                    if (authorObjs.length > 0) {
-                        line2.removeChild(line2.lastChild as Node);
-                    }
-                    item.appendChild(line2);
-                    const line3 = document.createElement('div');
-                    line3.className = 'scroll-item-line';
-                    line3.innerHTML = '<span class="blurb">' + record.blurb + '</span>';
-                    // line3.title = record.blurb;
-                    // To increase the font size of the tooltip, set the style on line3's title attribute using a custom tooltip library or by creating a custom tooltip element.
-                    // The native browser tooltip (from the title attribute) cannot have its font size changed via CSS.
-                    // Example: create a custom tooltip div.
-
-                    // line3.addEventListener('mouseenter', (e) => {
-                    //     let tooltip = document.createElement('div');
-                    //     tooltip.className = 'custom-tooltip';
-                    //     tooltip.textContent = record.blurb;
-                    //     document.body.appendChild(tooltip);
-                    //     tooltip.style.position = 'fixed';
-                    //     tooltip.style.left = e.clientX + 10 + 'px';
-                    //     tooltip.style.top = e.clientY + 10 + 'px';
-                    //     tooltip.style.fontSize = '1.2em'; // Larger font size
-                    //     tooltip.style.background = '#fff';
-                    //     tooltip.style.border = '1px solid #ccc';
-                    //     tooltip.style.padding = '8px 12px';
-                    //     tooltip.style.borderRadius = '6px';
-                    //     tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                    //     tooltip.style.zIndex = '9999';
-
-                    //     line3.addEventListener('mousemove', (moveEvent) => {
-                    //         tooltip.style.left = moveEvent.clientX + 10 + 'px';
-                    //         tooltip.style.top = moveEvent.clientY + 10 + 'px';
-                    //     });
-
-                    //     line3.addEventListener('mouseleave', () => {
-                    //         tooltip.remove();
-                    //     }, { once: true });
-                    // });
-                    item.appendChild(line3);
-                    // item.style.cursor = 'pointer';
+                    item.date = record.date;
+                    item.title = record.title;
+                    item.snippet = record.snip;
+                    item.blurb = record.blurb;
+                    item.authors = record.authors;
+                    item.articleUrl = record.link;
+                    item.imageUrl = 'https://cdn.theatlantic.com/thumbor/1mY3VY_ZKqtwQowiYMea-d7BBFI=/0x0:2363x3150/374x498/media/img/issues/2024/11/18/1224_Cover/original.jpg'
                 } else {
-                    item.textContent = "Error loading record!";
+                    item.title = "Error loading record!";
+                    item.snippet = "";
+                    item.blurb = "";
+                    item.authors = [];
                 }
             });
+        // this.vListRenderCallback = (index, query, incomingItem) => {
+        //     let item;
+        //     if (!incomingItem) {
+        //         item = document.createElement('div');
+        //         item.classList.add('scroll-item'); // Apply the CSS class to the item
+        //         item.style.height = String(this.rowHeightInPixels) + 'px'; // Ensure row height matches `itemHeight`
+        //         item.textContent = "Loading..." + index; // + ' ' + this.tabName + ' ' + JSON.stringify(query); // Placeholder content
+        //     } else {
+        //         item = incomingItem;
+        //     }
+        //     getRecord(query, index, (record: any) => {
+        //         if (record) {                   
+        //             const date = record.date;
+        //             const dateString = '<span class="date">' + (new Date(date * 1000).toISOString().split('T')[0]) + '</span>';
+        //             const title = '<span class="atlantic-title">' + record.title + '</span>';
+        //             const snip = highlightSnippet(record.snip);
+        //             const line1 = document.createElement('div');
+        //             line1.className = 'scroll-item-line';
+        //             line1.innerHTML = title + ' ' + snip;
+        //             line1.title = '    Ctrl/Cmd-Click to open...\n' + record.link + '\n    ...in a new tab.';
+        //             line1.addEventListener('click', (event) => {
+        //                 if (event.ctrlKey || event.metaKey || event.button === 1) { // Check if Ctrl key (or Cmd key on macOS) is pressed
+        //                     loadPage(record.link, true); // Open in new tab
+        //                 } else {
+        //                     loadPage(record.link); // Open in current tab
+        //                 }
+        //             });
+        //             item.textContent = '';
+        //             item.appendChild(line1);
+        //             const authorObjs = record.authors;
+        //             const line2 = document.createElement('div');
+        //             line2.className = 'scroll-item-line';
+        //             // Create author spans and attach event listeners
+        //             line2.innerHTML = dateString + '<span>  </span>';
+        //             authorObjs.forEach((obj: any) => {
+        //                 const authorSpan = document.createElement('span');
+        //                 authorSpan.className = 'author';
+        //                 authorSpan.style.cursor = 'pointer';
+        //                 authorSpan.textContent = `${obj.author_name} (${obj.article_count})`;
+        //                 authorSpan.addEventListener('click', () => {
+        //                     this.selectAuthor(obj.author_name);
+        //                 });
+        //                 line2.appendChild(authorSpan);
+        //                 line2.appendChild(document.createTextNode(', '));
+        //             });
+        //             // Remove trailing comma and space if any authors exist
+        //             if (authorObjs.length > 0) {
+        //                 line2.removeChild(line2.lastChild as Node);
+        //             }
+        //             item.appendChild(line2);
+        //             const line3 = document.createElement('div');
+        //             line3.className = 'scroll-item-line';
+        //             line3.innerHTML = '<span class="blurb">' + record.blurb + '</span>';
+        //             // line3.title = record.blurb;
+        //             // To increase the font size of the tooltip, set the style on line3's title attribute using a custom tooltip library or by creating a custom tooltip element.
+        //             // The native browser tooltip (from the title attribute) cannot have its font size changed via CSS.
+        //             // Example: create a custom tooltip div.
+
+        //             // line3.addEventListener('mouseenter', (e) => {
+        //             //     let tooltip = document.createElement('div');
+        //             //     tooltip.className = 'custom-tooltip';
+        //             //     tooltip.textContent = record.blurb;
+        //             //     document.body.appendChild(tooltip);
+        //             //     tooltip.style.position = 'fixed';
+        //             //     tooltip.style.left = e.clientX + 10 + 'px';
+        //             //     tooltip.style.top = e.clientY + 10 + 'px';
+        //             //     tooltip.style.fontSize = '1.2em'; // Larger font size
+        //             //     tooltip.style.background = '#fff';
+        //             //     tooltip.style.border = '1px solid #ccc';
+        //             //     tooltip.style.padding = '8px 12px';
+        //             //     tooltip.style.borderRadius = '6px';
+        //             //     tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+        //             //     tooltip.style.zIndex = '9999';
+
+        //             //     line3.addEventListener('mousemove', (moveEvent) => {
+        //             //         tooltip.style.left = moveEvent.clientX + 10 + 'px';
+        //             //         tooltip.style.top = moveEvent.clientY + 10 + 'px';
+        //             //     });
+
+        //             //     line3.addEventListener('mouseleave', () => {
+        //             //         tooltip.remove();
+        //             //     }, { once: true });
+        //             // });
+        //             item.appendChild(line3);
+        //             // item.style.cursor = 'pointer';
+        //         } else {
+        //             item.textContent = "Error loading record!";
+        //         }
+        //     });
             return item;
         }
         const query = this.getQuery();
