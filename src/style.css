@@ -273,3 +273,36 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.cover-gallery {
+  display: flex;
+  gap: 10px;
+}
+
+.cover-thumbnail img {
+  width: 100px;
+  height: auto;
+  cursor: pointer;
+  border: 1px solid #ccc;
+}
+
+/* Overlay styling */
+#cover-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* background-color: rgba(0, 0, 0, 0.5); semi-transparent background */
+  z-index: 1000;
+}
+
+#cover-overlay img {
+  max-width: 80vw;
+  max-height: 90vh;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+

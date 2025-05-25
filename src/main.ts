@@ -38,6 +38,28 @@ const dataCallbackCache: { [key: string]: any } = {};
 let lastPingTestTime = 0;
 const pingIntervalSeconds = 1 * 60 * 1000; // 5 minutes
 
+let MouseX = 0;
+let MouseY = 0;
+let LastThumbnailBounds: DOMRect | null = null;
+
+window.addEventListener('mousemove', (event) => {
+    MouseX = event.clientX;
+    MouseY = event.clientY;
+    const bounds = LastThumbnailBounds as DOMRect | null;
+    if (!bounds) {
+        return;
+    }
+    if (MouseX < bounds.left ||
+        MouseX > bounds.right ||
+        MouseY < bounds.top ||
+        MouseY > bounds.bottom
+        ) {
+    const coverOverlay = document.getElementById('cover-overlay') as HTMLDivElement;
+    coverOverlay.style.display = 'none';
+    LastThumbnailBounds = null;
+    }
+});
+
 // ------------------------- Fetch Single Retry Management -------------------------
 const fetchSingleCache: Map<string, { url: string, response: any, callback: any, nextTryTime: number }> = new Map();
 let fetchSingleScanInterval: any;
@@ -67,29 +89,19 @@ function loadPage(url: string, newTab = false) {
     document.body.removeChild(a);
 }
 
-function hoverCover(url: string) {
-    console.log('hoverCover', url);
+function hoverCover(url: string, thumbnailBounds: DOMRect | null = null) {
+    LastThumbnailBounds = thumbnailBounds;
+    const coverOverlay = document.getElementById('cover-overlay') as HTMLDivElement;
+    const overlayImage = document.getElementById('cover-overlay-image') as HTMLImageElement;
+    if (url) {
+        coverOverlay.style.display = 'flex';
+        overlayImage.src = url;
+    }
 }
 
 function selectCover(url: string) {
     console.log('selectCover', url);
 }
-
-// function highlightSnippet(snippet: string | null): string {
-//     try {
-//         if (snippet) {
-//             let s = snippet.replace(/<em>/g, '<span class="emphasis">');
-//             let s2 = s.replace(/<\/em>/g, '</span>');
-//             let snip = '<span class="snippet">' + s2 + '</span>';
-//             return snip;
-//         } else {
-//             return "";
-//         }
-//     } catch (error) {
-//         console.error("Error in highlightSnippet:", error);
-//         return "";
-//     }
-// }
 
 function flashElement(element: HTMLElement) {
     element.style.visibility = 'hidden';
@@ -669,8 +681,8 @@ class TermNavigator extends HTMLElement {
                 item = new ResultLineItem(
                     (author) => this.searchElement.setAuthor(author),
                     (url) => loadPage(url),
-                    (url) => hoverCover(url),
                     (url) => selectCover(url),
+                    (url, thumbnailBounds) => hoverCover(url, thumbnailBounds),
                     this.rowHeightInPixels
                 );
             } else {

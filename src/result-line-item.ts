@@ -5,8 +5,8 @@ export class ResultLineItem extends LitElement {
   // Callbacks
   private _authorCallback: (author: string) => void;
   private _articleCallback: (url: string) => void;
-  private _coverSelectCallback: (name: string) => void;
-  private _coverHoverCallback: (name: string) => void;
+  private _coverSelectCallback: (url: string) => void;
+  private _coverHoverCallback: (url: string, thumbnailBounds: DOMRect | null) => void;
 
   // Internal fields
   private _title: string = '';
@@ -21,7 +21,7 @@ export class ResultLineItem extends LitElement {
     authorCallback: (author: string) => void,
     articleCallback: (url: string) => void,
     coverSelectCallback: (url: string) => void,
-    coverHoverCallback: (url: string) => void,
+    coverHoverCallback: (url: string, thumbnailBounds: DOMRect | null) => void,
     height: number = 60
   ) {
     super();
@@ -149,33 +149,42 @@ static styles = css`
   render() {
     return html`
       <div class="container">
-        <img
-          class="thumbnail"
-          src="${this._imageUrl}"
-          alt="Thumbnail"
-          @click=${() => this._coverSelectCallback(this._imageUrl)}
-          @mouseover=${() => this._coverHoverCallback(this._imageUrl)}
-        />
-        <div class="text">
-          <div class="line">
-            <span class="title" @click=${() => this._articleCallback(this._articleUrl)}>${this._title}</span>
-            <span class="snippet"> ${unsafeHTML(this._snippet)}</span>
-          </div>
-          <div class="line">
-            <span class="date">${this._date}</span>
-            <span style="display:inline-block; width:1em;"></span>
-            ${this._authors.map(
-              (author, idx) => html`
-                <span
-                  class="author"
-                  @click=${() => this._authorCallback(author.author_name)}
-                  >${author.author_name} (${author.article_count})</span
-                >${idx < this._authors.length - 1 ? ', ' : ''}
-              `
-            )}
-          </div>
-          <div class="line blurb">${this._blurb}</div>
+      <img
+        id="thumbnail"
+        class="thumbnail"
+        src="${this._imageUrl}"
+        alt="Thumbnail"
+        @click=${() => this._coverSelectCallback(this._imageUrl)}
+        @mouseenter=${() => {
+          const element = this.renderRoot.querySelector<HTMLImageElement>('#thumbnail');
+          const bounds = element?.getBoundingClientRect() || null;
+          this._coverHoverCallback(this._imageUrl, bounds);
+        }}
+        @mouseleave=${() => {
+            // this._coverHoverCallback('', this.getElementsByClassName('thumbnail')[0]?.getBoundingClientRect() || null);
+            }
+        }
+      />
+      <div class="text">
+        <div class="line">
+        <span class="title" @click=${() => this._articleCallback(this._articleUrl)}>${this._title}</span>
+        <span class="snippet"> ${unsafeHTML(this._snippet)}</span>
         </div>
+        <div class="line">
+        <span class="date">${this._date}</span>
+        <span style="display:inline-block; width:1em;"></span>
+        ${this._authors.map(
+          (author, idx) => html`
+          <span
+            class="author"
+            @click=${() => this._authorCallback(author.author_name)}
+            >${author.author_name} (${author.article_count})</span
+          >${idx < this._authors.length - 1 ? ', ' : ''}
+          `
+        )}
+        </div>
+        <div class="line blurb">${this._blurb}</div>
+      </div>
       </div>
     `;
   }
