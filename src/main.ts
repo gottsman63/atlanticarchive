@@ -443,6 +443,7 @@ class TermFrequencyChart extends HTMLElement {
     chart: Chart | null = null;
     chartContainer: HTMLDivElement | null = null;
     activeIndex: number = 0;
+    query: any = null;
 
     constructor() {
         super();
@@ -489,10 +490,12 @@ class TermFrequencyChart extends HTMLElement {
                             if (this.chart?.data.labels) {
                                 const year = this.chart.data.labels[index];
                                 const term = this.chart.getDatasetMeta(0).label;
-                                const hoverEvent = new CustomEvent('bar-click', {
-                                    detail: { "index": index, "term": term, "year": year, rowIndexOfYear: this.getCumulativeLineIndexOfYear(parseInt(year as string)) },
+                                this.getCumulativeLineIndexOfYearMonth(parseInt(year as string), 12, (rowIndexOfYear: number) => {
+                                    const hoverEvent = new CustomEvent('bar-click', {
+                                        detail: { "index": rowIndexOfYear, "term": term, "year": year, rowIndexOfYear: rowIndexOfYear},
+                                    });
+                                    this.dispatchEvent(hoverEvent);
                                 });
-                                this.dispatchEvent(hoverEvent);
                             }
                         }
                     },
@@ -521,7 +524,8 @@ class TermFrequencyChart extends HTMLElement {
     }
 
     setQuery(query: any) {
-        const queryCopy = JSON.parse(JSON.stringify(query));
+        this.query = query;
+        const queryCopy = JSON.parse(JSON.stringify(this.query));
         queryCopy.query = 'articlesyearcounts';
         getAllRecords(queryCopy, (result: any) => {
             this.setTermsData(result);
@@ -536,18 +540,26 @@ class TermFrequencyChart extends HTMLElement {
         }
     }
 
-    getCumulativeLineIndexOfYear(year: number) {
-        const firstDataset = this.chart?.data.datasets[0];
-        if (!firstDataset) return -1;
-        const datasetIndex = year - 1857;
-        let rowCount = 0
-        for (let i = firstDataset.data.length - 1; i > datasetIndex; i--) {
-            rowCount += firstDataset.data[i] as number;
-        }
+    getCumulativeLineIndexOfYearMonth(year: number, month: number, callback: (index: number) => void) {
+        const queryCopy = JSON.parse(JSON.stringify(this.query));
+        queryCopy.query = 'recordindexofyearmonth';
+        queryCopy.year = year;
+        queryCopy.month = month;
+        getAllRecords(queryCopy, (result: any) => {
+            callback(result.results.index);
+        });
+
+        // const firstDataset = this.chart?.data.datasets[0];
+        // if (!firstDataset) return -1;
+        // const datasetIndex = year - 1857;
+        // let rowCount = 0
+        // for (let i = firstDataset.data.length - 1; i > datasetIndex; i--) {
+        //     rowCount += firstDataset.data[i] as number;
+        // }
         // for (let i = 0; i < datasetIndex; i++) {
         //     rowCount += firstDataset.data[i] as number;
         // }
-        return rowCount;
+        // return rowCount;
     }
 
     setLineIndexHighlight(index: number) {
@@ -632,8 +644,8 @@ class TermNavigator extends HTMLElement {
         this.termFrequencyChart = new TermFrequencyChart();
         this.appendChild(this.termFrequencyChart);
         this.termFrequencyChart.addEventListener('bar-click', (event: any) => {
-            const rowIndexOfYear = event.detail.rowIndexOfYear;
-            this.listCache?.scrollToIndex(rowIndexOfYear);
+            const rowIndex = event.detail.index;
+            this.listCache?.scrollToIndex(rowIndex);
             // const term = event.detail.term;
             // this.searchElement.setSearchString(term);
             // this.setDateRange(year, year);
@@ -1157,6 +1169,7 @@ async function fetchSingle(url: string, callback: (response: any) => void) {
             }
         });
         const jsonResponse = await response.json();
+        console.log('Fetch response:', jsonResponse);
         // const duration = Date.now() - startTime;
         // console.log('Fetch duration (' + url + '):', duration, 'ms');
         fetchSingleSucceeded(url, callback, jsonResponse);

@@ -89,7 +89,7 @@ static styles = css`
     }
     .title {
         color: var(--sl-color-primary-600, #3b82f6);
-        font-size: 1.0em;
+        font-size: 1.2em;
         font-weight: bold;
         cursor: pointer;
         flex-shrink: 0;
@@ -128,6 +128,7 @@ static styles = css`
     }
     .blurb {
         font-style: italic;
+        font-size: 1.1em;
         color: var(--sl-color-neutral-600, #6b7280);
         line-height: 1.2;
         overflow-x: auto;
@@ -168,6 +169,7 @@ static styles = css`
       <div class="text">
         <div class="line">
         <span class="title" @click=${() => this._articleCallback(this._articleUrl)}>${this._title}</span>
+        <span style="display:inline-block; width:1em;"></span>
         <span class="snippet"> ${unsafeHTML(this._snippet)}</span>
         </div>
         <div class="line">
