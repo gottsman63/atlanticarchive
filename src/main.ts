@@ -8,7 +8,6 @@ import 'tom-select/dist/css/tom-select.default.css';
 import './style.css'
 import LZString from 'lz-string';
 
-
 // Import noUiSlider
 import 'nouislider/dist/nouislider.css';
 import noUiSlider from 'nouislider';
@@ -20,6 +19,8 @@ import './term-row.js';
 import { VirtualizedList } from './vlist';
 import { Chart, ChartDataset, Colors, registerables } from 'chart.js';
 import { ResultLineItem } from './result-line-item.js';
+import { YearThumbnailGallery } from './year-thumbnail-gallery.js';
+
 Chart.register(...registerables);
 
 const fetchUrl = 'https://ocf23hr7gvdwnjvqjdxkyfn72q0krmpf.lambda-url.eu-west-1.on.aws/'; // Default URL
@@ -99,9 +100,15 @@ function hoverCover(url: string, thumbnailBounds: DOMRect | null = null) {
     }
 }
 
-function selectCover(url: string) {
-    console.log('selectCover', url);
-}
+function getCumulativeLineIndexOfYearMonth(query: any, year: number, month: number, callback: (index: number) => void) {
+        const queryCopy = JSON.parse(JSON.stringify(query));
+        queryCopy.query = 'recordindexofyearmonth';
+        queryCopy.year = year;
+        queryCopy.month = month;
+        getAllRecords(queryCopy, (result: any) => {
+            callback(result.results.index);
+        });
+    }
 
 function flashElement(element: HTMLElement) {
     element.style.visibility = 'hidden';
@@ -391,8 +398,9 @@ class SearchElement extends HTMLElement {
             this.tomSelect.setTextboxValue(s);
             // this.tomSelect.refreshOptions(true);
             this.tomSelect.load(s);
-            // this.tomSelect.open();
-            this.tomSelect.focus();
+            this.tomSelect.open();
+            // this.tomSelect.focus();
+            // this.tomSelect.close();
             this.changeCallback();
             // this.setResetAuthorButtonVisibility(s.length > 0);
         }
@@ -490,7 +498,7 @@ class TermFrequencyChart extends HTMLElement {
                             if (this.chart?.data.labels) {
                                 const year = this.chart.data.labels[index];
                                 const term = this.chart.getDatasetMeta(0).label;
-                                this.getCumulativeLineIndexOfYearMonth(parseInt(year as string), 12, (rowIndexOfYear: number) => {
+                                getCumulativeLineIndexOfYearMonth(this.query, parseInt(year as string), 12, (rowIndexOfYear: number) => {
                                     const hoverEvent = new CustomEvent('bar-click', {
                                         detail: { "index": rowIndexOfYear, "term": term, "year": year, rowIndexOfYear: rowIndexOfYear},
                                     });
@@ -538,28 +546,6 @@ class TermFrequencyChart extends HTMLElement {
             this.chart.data.datasets = [];
             this.chart.update();
         }
-    }
-
-    getCumulativeLineIndexOfYearMonth(year: number, month: number, callback: (index: number) => void) {
-        const queryCopy = JSON.parse(JSON.stringify(this.query));
-        queryCopy.query = 'recordindexofyearmonth';
-        queryCopy.year = year;
-        queryCopy.month = month;
-        getAllRecords(queryCopy, (result: any) => {
-            callback(result.results.index);
-        });
-
-        // const firstDataset = this.chart?.data.datasets[0];
-        // if (!firstDataset) return -1;
-        // const datasetIndex = year - 1857;
-        // let rowCount = 0
-        // for (let i = firstDataset.data.length - 1; i > datasetIndex; i--) {
-        //     rowCount += firstDataset.data[i] as number;
-        // }
-        // for (let i = 0; i < datasetIndex; i++) {
-        //     rowCount += firstDataset.data[i] as number;
-        // }
-        // return rowCount;
     }
 
     setLineIndexHighlight(index: number) {
@@ -625,6 +611,7 @@ customElements.define('term-frequency-chart', TermFrequencyChart);
 
 // --------------------------------- Term Navigator --------------------------------
 class TermNavigator extends HTMLElement {
+    yearThumbnailGallery: YearThumbnailGallery;
     searchElement: SearchElement;
     // termRowHolder: TermRowHolder;
     dateSlider: DoubleSlider;
@@ -636,11 +623,29 @@ class TermNavigator extends HTMLElement {
     endDateSeconds: number = 0;
     rowHeightInPixels: number = 80;
     termFrequencyChart!: TermFrequencyChart;
-
     constructor() {
         super();
         const debouncedHandleChange = debounce(() => this.handleChange(), 300);
 
+        this.yearThumbnailGallery = new YearThumbnailGallery();
+        this.appendChild(this.yearThumbnailGallery);
+        this.yearThumbnailGallery.id = 'year-thumbnail-gallery';
+        this.yearThumbnailGallery.year = '1930'; // Default year for the thumbnail gallery
+        this.yearThumbnailGallery.images = [
+            "https://cdn.theatlantic.com/thumbor/OyZIPEFgyOxxaHqgrTwnoZLQC-o=/0x0:2640x3800/374x539/media/img/issues/1930/04/01/original.jpg",
+            "https://cdn.theatlantic.com/thumbor/OyZIPEFgyOxxaHqgrTwnoZLQC-o=/0x0:2640x3800/374x539/media/img/issues/1930/04/01/original.jpg",
+            "https://cdn.theatlantic.com/thumbor/OyZIPEFgyOxxaHqgrTwnoZLQC-o=/0x0:2640x3800/374x539/media/img/issues/1930/04/01/original.jpg",
+            "https://cdn.theatlantic.com/thumbor/OyZIPEFgyOxxaHqgrTwnoZLQC-o=/0x0:2640x3800/374x539/media/img/issues/1930/04/01/original.jpg",
+        ];
+        this.yearThumbnailGallery.addEventListener('thumbnail-hover', (event: any) => {
+            const url = event.detail.src;
+            const thumbnailBounds = event.detail.thumbnailBounds;
+            hoverCover(url, thumbnailBounds);
+        });
+        this.yearThumbnailGallery.addEventListener('thumbnail-click', (event: any) => {
+            const src = event.detail.src;
+            this.selectCover(src);
+        });
         this.termFrequencyChart = new TermFrequencyChart();
         this.appendChild(this.termFrequencyChart);
         this.termFrequencyChart.addEventListener('bar-click', (event: any) => {
@@ -693,7 +698,7 @@ class TermNavigator extends HTMLElement {
                 item = new ResultLineItem(
                     (author) => this.searchElement.setAuthor(author),
                     (url) => loadPage(url),
-                    (url) => selectCover(url),
+                    (url) => this.selectCover(url),
                     (url, thumbnailBounds) => hoverCover(url, thumbnailBounds),
                     this.rowHeightInPixels
                 );
@@ -716,117 +721,24 @@ class TermNavigator extends HTMLElement {
                     item.authors = [];
                 }
             });
-        // this.vListRenderCallback = (index, query, incomingItem) => {
-        //     let item;
-        //     if (!incomingItem) {
-        //         item = document.createElement('div');
-        //         item.classList.add('scroll-item'); // Apply the CSS class to the item
-        //         item.style.height = String(this.rowHeightInPixels) + 'px'; // Ensure row height matches `itemHeight`
-        //         item.textContent = "Loading..." + index; // + ' ' + this.tabName + ' ' + JSON.stringify(query); // Placeholder content
-        //     } else {
-        //         item = incomingItem;
-        //     }
-        //     getRecord(query, index, (record: any) => {
-        //         if (record) {                   
-        //             const date = record.date;
-        //             const dateString = '<span class="date">' + (new Date(date * 1000).toISOString().split('T')[0]) + '</span>';
-        //             const title = '<span class="atlantic-title">' + record.title + '</span>';
-        //             const snip = highlightSnippet(record.snip);
-        //             const line1 = document.createElement('div');
-        //             line1.className = 'scroll-item-line';
-        //             line1.innerHTML = title + ' ' + snip;
-        //             line1.title = '    Ctrl/Cmd-Click to open...\n' + record.link + '\n    ...in a new tab.';
-        //             line1.addEventListener('click', (event) => {
-        //                 if (event.ctrlKey || event.metaKey || event.button === 1) { // Check if Ctrl key (or Cmd key on macOS) is pressed
-        //                     loadPage(record.link, true); // Open in new tab
-        //                 } else {
-        //                     loadPage(record.link); // Open in current tab
-        //                 }
-        //             });
-        //             item.textContent = '';
-        //             item.appendChild(line1);
-        //             const authorObjs = record.authors;
-        //             const line2 = document.createElement('div');
-        //             line2.className = 'scroll-item-line';
-        //             // Create author spans and attach event listeners
-        //             line2.innerHTML = dateString + '<span>  </span>';
-        //             authorObjs.forEach((obj: any) => {
-        //                 const authorSpan = document.createElement('span');
-        //                 authorSpan.className = 'author';
-        //                 authorSpan.style.cursor = 'pointer';
-        //                 authorSpan.textContent = `${obj.author_name} (${obj.article_count})`;
-        //                 authorSpan.addEventListener('click', () => {
-        //                     this.selectAuthor(obj.author_name);
-        //                 });
-        //                 line2.appendChild(authorSpan);
-        //                 line2.appendChild(document.createTextNode(', '));
-        //             });
-        //             // Remove trailing comma and space if any authors exist
-        //             if (authorObjs.length > 0) {
-        //                 line2.removeChild(line2.lastChild as Node);
-        //             }
-        //             item.appendChild(line2);
-        //             const line3 = document.createElement('div');
-        //             line3.className = 'scroll-item-line';
-        //             line3.innerHTML = '<span class="blurb">' + record.blurb + '</span>';
-        //             // line3.title = record.blurb;
-        //             // To increase the font size of the tooltip, set the style on line3's title attribute using a custom tooltip library or by creating a custom tooltip element.
-        //             // The native browser tooltip (from the title attribute) cannot have its font size changed via CSS.
-        //             // Example: create a custom tooltip div.
-
-        //             // line3.addEventListener('mouseenter', (e) => {
-        //             //     let tooltip = document.createElement('div');
-        //             //     tooltip.className = 'custom-tooltip';
-        //             //     tooltip.textContent = record.blurb;
-        //             //     document.body.appendChild(tooltip);
-        //             //     tooltip.style.position = 'fixed';
-        //             //     tooltip.style.left = e.clientX + 10 + 'px';
-        //             //     tooltip.style.top = e.clientY + 10 + 'px';
-        //             //     tooltip.style.fontSize = '1.2em'; // Larger font size
-        //             //     tooltip.style.background = '#fff';
-        //             //     tooltip.style.border = '1px solid #ccc';
-        //             //     tooltip.style.padding = '8px 12px';
-        //             //     tooltip.style.borderRadius = '6px';
-        //             //     tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-        //             //     tooltip.style.zIndex = '9999';
-
-        //             //     line3.addEventListener('mousemove', (moveEvent) => {
-        //             //         tooltip.style.left = moveEvent.clientX + 10 + 'px';
-        //             //         tooltip.style.top = moveEvent.clientY + 10 + 'px';
-        //             //     });
-
-        //             //     line3.addEventListener('mouseleave', () => {
-        //             //         tooltip.remove();
-        //             //     }, { once: true });
-        //             // });
-        //             item.appendChild(line3);
-        //             // item.style.cursor = 'pointer';
-        //         } else {
-        //             item.textContent = "Error loading record!";
-        //         }
-        //     });
             return item;
         }
         const query = this.getQuery();
         this.initializeListCache(query);
     }
+    
+    selectCover(url: string) {
+        console.log('selectCover', url);
+        const { year, month } = this.extractYearMonthFromCoverUrl(url);
+        getCumulativeLineIndexOfYearMonth(this.getQuery(), year, month, (rowIndexOfYear: number) => {
+            this.listCache?.scrollToIndex(rowIndexOfYear);
+        });
+    }
 
-    splitQueryIntoTerms(query: string): string[] {
-        const terms: string[] = [];
-        const regex = /"([^"]+)"|(\S+)/g;
-        let match;
-
-        while ((match = regex.exec(query)) !== null) {
-            if (match[1]) {
-                // Quoted phrase
-                terms.push(`"${match[1]}"`);
-            } else if (match[2]) {
-                // Individual word
-                terms.push(match[2]);
-            }
-        }
-
-        return terms;
+    extractYearMonthFromCoverUrl(url: string) {
+        const year = 1954;
+        const month = 1
+        return { year, month };
     }
 
     async connectedCallback() {
@@ -847,21 +759,6 @@ class TermNavigator extends HTMLElement {
 
     resetDateSlider() {
         this.dateSlider.resetRange();
-    }
-
-    resetMatchCounts() {
-        // const tentativeTerms = this.termRowHolder.getTentativeTerms();
-        // if (tentativeTerms.length > 0) {
-        //     return;
-        // }
-        // const query = this.getQuery();
-        // const terms = this.termRowHolder.getAllTerms();
-        // query.terms = terms;
-        // query.query = 'incrementalresultcounts';
-        // getAllRecords(query, (response: any) => {
-        //     this.termRowHolder.setMatchCounts(response);
-        //     this.dehydrate();
-        // });
     }
 
     updateResetAuthorButton() {
@@ -896,14 +793,6 @@ class TermNavigator extends HTMLElement {
         } else {
             this.initializeListCache(query);  // This should already have happened, but it can fail.
         }
-        // const terms = this.splitQueryIntoTerms(query.searchstring);
-        // const terms = query.searchstring.trim().split(' ');
-        // const tentativeTerms = this.termRowHolder.getTentativeTerms();
-        // const nonTentativeTerms = terms.filter(term => !tentativeTerms.includes(term));
-        // const trimmedNonTentativeTerms = nonTentativeTerms.map(term => term.trim()).filter(term => term !== '');
-        // this.termRowHolder.addTermsToTopmostRow(trimmedNonTentativeTerms);
-        // this.termRowHolder.selectTermsForCheck(trimmedNonTentativeTerms);
-        // this.resetMatchCounts();
         this.termFrequencyChart.setQuery(query);
     }
 
@@ -921,49 +810,6 @@ class TermNavigator extends HTMLElement {
 
 customElements.define('term-navigator', TermNavigator);
 
-
-// =========================== Server Database =========================
-// function getQueryBlockKey(queryKey, blockIndex) {
-//   return queryKey + ": " + blockIndex;
-// }
-
-// function isPending(query: any, blockIndex: number) {
-//     const key = JSON.stringify(query) + blockIndex;
-//     const record = pendingQueries[key];
-//     if (record) {
-//         const time = Date.now() - record.time;
-//         if (time > 2 * 1000) {
-//             delete pendingQueries[key];
-//             return false;
-//         }
-//     } else {
-//         return false;
-//     }
-//     return pendingQueries[key];
-// }
-
-// function addToPendingCache(query: any, blockIndex: number) {
-//     const key = JSON.stringify(query) + blockIndex;
-//     if (!pendingQueries[key]) {
-//         pendingQueries[key] = { query: query, blockIndex: blockIndex, time: Date.now() };
-//     }
-// }
-
-// function clearOldPendingCacheEntries() {
-//     const currentTime = Date.now();
-//     for (const key in pendingQueries) {
-//         const record = pendingQueries[key];
-//         const time = currentTime - record.time;
-//         if (time > 2 * 1000) {
-//             delete pendingQueries[key];
-//         }
-//     }
-// }
-
-// function clearPendingCache() {
-//     pendingQueries = {};
-// }
-
 function initializeDataCallbackCache(query: any) {
     const key = JSON.stringify(query);
     if (!dataCallbackCache[key]) {
@@ -973,54 +819,11 @@ function initializeDataCallbackCache(query: any) {
 }
 
 async function getAllRecords(query: any, sendResponse: (s: any) => void) {
-    // const queryKey = JSON.stringify(query);
-    // if (cacheForGetAllRecords[queryKey] && retryIndex === 0) {
-    //     sendResponse(cacheForGetAllRecords[queryKey]);
-    //     return;
-    // }
-    // if (cacheForGetAllRecords[queryKey]) {
-    //     // At some point the query came back with a result and sendResponse was called; this is an unnecessary retry.
-    //     return;
-    // }
-    // // retryGetAllRecords(query, sendResponse, retryIndex + 1);
-    // clearOldPendingCacheEntries();
-    // if (isPending(queryKey, 0)) {
-    //     return;
-    // }
-    // addToPendingCache(query, 0);
     const queryDict = JSON.parse(JSON.stringify(query));
     // Serialize array values as JSON strings to preserve their structure
     const queryString = new URLSearchParams(queryDict).toString();
     const url = getFetchUrl() + '/request?' + queryString;
     await fetchSingle(url, sendResponse);
-    // try {
-    //     let response = await fetch(url, {
-    //         method: 'GET',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //         }
-    //     });
-    //     if (!response.ok) {
-    //         throw new Error(`HTTP error! status: ${response.status}`);
-    //     }
-    //     let jsonResponse = await response.json();
-    //     // console.log('getAllRecords response:', jsonResponse);
-    //     if (jsonResponse.error) {
-    //         console.error('Error in response:', jsonResponse.error);
-    //         console.error('Query:', JSON.stringify(queryDict));
-    //     } else {
-    //         if (!cacheForGetAllRecords[queryKey]) {
-    //             // Another version of this query might have been received and processed in the meantime.
-    //             sendResponse(jsonResponse.results);
-    //         }
-    //         cacheForGetAllRecords[queryKey] = jsonResponse.results;
-    //     }
-    // } catch (error) {
-    //     console.error('Error fetching block:', error);
-    //     console.error('Query:', JSON.stringify(queryDict));
-    //     delete pendingQueries[queryKey]; // Prevent infinite retries
-    //     return null;
-    // }
 }
 
 function processNewlyArrivedData(query: any, blockIndex: number, response: any) {
