@@ -231,8 +231,8 @@ a:hover {
   position: fixed;
   top: 100px;
   left: 100px;
-  width: calc(100vw - 100px);
-  height: calc(100vh - 100px);
+  width: calc(100vw - 200px);
+  height: calc(100vh - 200px);
   display: flex;
   justify-content: center;
   align-items: center;

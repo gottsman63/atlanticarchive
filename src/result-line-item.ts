@@ -259,6 +259,18 @@ static styles = css`
     this._imageUrl = url;
     this.requestUpdate('imageUrl', old);
   }
-}
+
+  extractYearMonthFromCoverUrl(url: string) {
+      const match = url.match(/(\d{4})_(\d{1,2})\.jpg/);
+      if (match) {
+          const year = parseInt(match[1], 10);
+          const month = parseInt(match[2], 10);
+          return { year, month };
+      }
+      const year = 2025;
+      const month = 1;
+      return { year, month };
+    }
+  }
 
 customElements.define('result-line-item', ResultLineItem);

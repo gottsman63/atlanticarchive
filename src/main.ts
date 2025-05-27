@@ -123,6 +123,11 @@ function flashElement(element: HTMLElement) {
     }, 900);
 }
 
+function getImageUrlFromYearMonth (year: number, month: number): string {
+    // Construct the image URL based on the year and month
+    return `https://foo.images.com/images/${year}_${month}.jpg`;
+};  
+
 // --------------------------- Date Slider ------------------------------
 class DoubleSlider extends HTMLElement {
     tabName: string;
@@ -554,16 +559,19 @@ class TermFrequencyChart extends HTMLElement {
         const dataset = this.chart.data.datasets[0];
         if (!dataset) return;
         let cumulativeLineCount = 0
+        let year = new Date().getFullYear();
         for (let i = dataset.data.length - 1; i > 0; i--) {
             cumulativeLineCount += dataset.data[i] as number;
             if (cumulativeLineCount > index) {
                 this.activeIndex = i;
                 break;
             }
+            year = year - 1;
         }
         if (this.chart) {
             this.chart.update();
         }
+        return year;
     }
 
     setTermsData(termDict: { [key: string]: number[] }) {
@@ -651,11 +659,8 @@ class TermNavigator extends HTMLElement {
         this.termFrequencyChart.addEventListener('bar-click', (event: any) => {
             const rowIndex = event.detail.index;
             this.listCache?.scrollToIndex(rowIndex);
-            // const term = event.detail.term;
-            // this.searchElement.setSearchString(term);
-            // this.setDateRange(year, year);
-            // this.dateSlider.setDateRange(year, year);
-            // this.handleChange();
+            const year = event.detail.year;
+            this.setGalleryYear(year);
         });
 
         this.dateSlider = new DoubleSlider((start, end) => {
@@ -713,7 +718,9 @@ class TermNavigator extends HTMLElement {
                     item.blurb = record.blurb;
                     item.authors = record.authors;
                     item.articleUrl = record.link;
-                    item.imageUrl = 'https://cdn.theatlantic.com/thumbor/1mY3VY_ZKqtwQowiYMea-d7BBFI=/0x0:2363x3150/374x498/media/img/issues/2024/11/18/1224_Cover/original.jpg'
+                    const year = record.year;
+                    const month = record.month;
+                    item.imageUrl = getImageUrlFromYearMonth(year, month);
                 } else {
                     item.title = "Error loading record!";
                     item.snippet = "";
@@ -728,16 +735,25 @@ class TermNavigator extends HTMLElement {
     }
     
     selectCover(url: string) {
-        console.log('selectCover', url);
+        this.searchElement.clearAuthorField();
+        this.searchElement.setSearchString('');
         const { year, month } = this.extractYearMonthFromCoverUrl(url);
-        getCumulativeLineIndexOfYearMonth(this.getQuery(), year, month, (rowIndexOfYear: number) => {
-            this.listCache?.scrollToIndex(rowIndexOfYear);
-        });
+        setTimeout(() => {
+            getCumulativeLineIndexOfYearMonth(this.getQuery(), year, month, (rowIndexOfYear: number) => {
+                this.listCache?.scrollToIndex(rowIndexOfYear);
+            })
+        }, 300);
     }
 
     extractYearMonthFromCoverUrl(url: string) {
-        const year = 1954;
-        const month = 1
+        const match = url.match(/(\d{4})_(\d{1,2})\.jpg/);
+        if (match) {
+            const year = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            return { year, month };
+        }
+        const year = 2025;
+        const month = 1;
         return { year, month };
     }
 
@@ -745,7 +761,7 @@ class TermNavigator extends HTMLElement {
         this.initialize();
         // this.rehydrate();
         this.handleChange();
-        this.updateResetAuthorButton();
+        // this.updateResetAuthorButton();
     }
 
     selectAuthor(author: string) {
@@ -761,10 +777,14 @@ class TermNavigator extends HTMLElement {
         this.dateSlider.resetRange();
     }
 
-    updateResetAuthorButton() {
-        if (this.searchElement) {
-            this.searchElement.setResetAuthorButtonVisibility();
-        }
+    setGalleryYear(year: string) {
+        this.yearThumbnailGallery.year = year;
+        const query = { query: "monthsforyear", year: parseInt(year) };
+        getAllRecords(query, (result: any) => {
+            const yearNum = Number(year);
+            const urls = result.results.map((item: number) => getImageUrlFromYearMonth(yearNum, item));
+            this.yearThumbnailGallery.images = urls;
+        });
     }
 
     async initializeListCache(query: any) {
@@ -780,7 +800,11 @@ class TermNavigator extends HTMLElement {
                     query,
                     'tabid',
                     getQueryTotal,
-                    (scrollIndex: number) => this.termFrequencyChart.setLineIndexHighlight(scrollIndex))
+                    (scrollIndex: number) => { 
+                        const year = this.termFrequencyChart.setLineIndexHighlight(scrollIndex) || new Date().getFullYear();
+                        this.setGalleryYear(year.toString());
+                    }
+                );
             }
         });
     }

@@ -89,12 +89,13 @@ export class YearThumbnailGallery extends LitElement {
           ${this.images.map((src, i) => html`
             <img
               src=${src}
+              alt="[${this.extractMonthFromCoverUrl(src)}]"
+              title="${this.extractMonthFromCoverUrl(src)}"
               class="thumb"
               @mousemove=${() => {
                 this._onHover(i); 
             }}
               @click=${() => this._onClick(i)}
-              alt="Thumbnail ${i + 1}"
             />
           `)}
         </div>
@@ -122,5 +123,15 @@ export class YearThumbnailGallery extends LitElement {
       bubbles: true,
       composed: true
     }));
+  }
+
+  extractMonthFromCoverUrl(url: string) {
+    const match = url.match(/(\d{4})_(\d{1,2})\.jpg/);
+    if (match) {
+        const month = parseInt(match[2], 10);
+        const monthAbbr = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        return monthAbbr[month - 1] || "Dec";
+    }
+    return "Dec";
   }
 }
