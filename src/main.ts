@@ -578,7 +578,7 @@ class TermFrequencyChart extends HTMLElement {
         let colorIndex = 0;
         for (const [term, counts] of Object.entries(termDict.results)) {
             const dataset: ChartDataset<'bar'> = {
-                label: term ? ('Articles matching "' + term + '"') : 'Article Count, per Year',
+                label: term ? ('Counts of Articles Containing "' + term + '"') : 'Article Count, per Year',
                 data: counts as any as number[],
                 backgroundColor: function (context: any) {
                     const idx = context.dataIndex;

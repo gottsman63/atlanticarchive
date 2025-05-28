@@ -129,7 +129,7 @@ static styles = css`
     }
     .blurb {
         font-style: italic;
-        font-size: 1.1em;
+        font-size: 1.0em;
         color: var(--sl-color-neutral-600, #6b7280);
         line-height: 1.2;
         overflow-x: auto;
@@ -145,6 +145,15 @@ static styles = css`
         height: 0;
         display: none;
         background: transparent;
+    }
+    .tooltip {
+        --sl-tooltip-font-size: 1.0em;
+        --sl-tooltip-max-width: 400px;
+        --sl-tooltip-background-color: var(--sl-color-neutral-800, #374151);
+        --sl-tooltip-text-color: var(--sl-color-neutral-0, #ffffff);
+        --sl-tooltip-border-radius: 4px;
+        --sl-tooltip-padding: 8px;
+        --sl-tooltip-box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
 `;
 
@@ -189,7 +198,7 @@ static styles = css`
             `
           )}
         </div>
-        <div style="height:1px; background:black; width:100%; margin:8px 0;"></div>
+        <div style="height:1px; background:gray; width:100%; margin:8px 0;"></div>
       </div>
     `;
   }
