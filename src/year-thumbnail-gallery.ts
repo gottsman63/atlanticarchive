@@ -37,7 +37,7 @@ export class YearThumbnailGallery extends LitElement {
       display: block;
       width: 100%;
       /* you can override this in page CSS */
-      height: 80px;
+      height: 100px;
       box-sizing: border-box;
     }
     .container {
@@ -71,6 +71,7 @@ export class YearThumbnailGallery extends LitElement {
       object-fit: contain;
       cursor: pointer;
       user-select: none;
+      box-shadow: 0 4px 4px rgba(0, 0, 0, 0.5);
     }
   `;
 
@@ -89,12 +90,20 @@ export class YearThumbnailGallery extends LitElement {
           ${this.images.map((src, i) => html`
             <img
               src=${src}
-              alt="[${this.extractMonthFromCoverUrl(src)}]"
               title="${this.extractMonthFromCoverUrl(src)}"
               class="thumb"
+              style="display: block"
+              @error=${(e: Event) => {
+                const img = e.currentTarget as HTMLImageElement;
+                img.style.display = 'none';
+              }}
+              @load=${(e: Event) => {
+                const img = e.currentTarget as HTMLImageElement;
+                img.style.display = 'block';
+              }}
               @mousemove=${() => {
                 this._onHover(i); 
-            }}
+              }}
               @click=${() => this._onClick(i)}
             />
           `)}

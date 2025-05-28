@@ -86,7 +86,7 @@ a:hover {
 }
 
 .full-height-scroll-area {
-  height: calc(100vh - 210px);
+  height: calc(100vh - 300px);
 }
 
 .scroll-area {
@@ -97,7 +97,7 @@ a:hover {
   /* max-width: 80%; */
   border: 3px solid black;
   position: relative;
-  height: calc(100vh - 210px);
+  height: calc(100vh - 400px);
 }
 
 .jviewer-search-bar {

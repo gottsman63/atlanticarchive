@@ -52,6 +52,7 @@ static styles = css`
         cursor: pointer;
         background: #f0f0f0;
         display: block;
+        box-shadow: 0 4px 4px rgba(0, 0, 0, 0.5);
     }
     .text {
         display: flex;
@@ -172,21 +173,23 @@ static styles = css`
         <span style="display:inline-block; width:1em;"></span>
         <span class="snippet"> ${unsafeHTML(this._snippet)}</span>
         </div>
+        <sl-tooltip  class="tooltip" content="${this._blurb}">
+          <div class="line blurb">${this._blurb}</div>
+        </sl-tooltip>
         <div class="line">
-        <span class="date">${this._date}</span>
-        <span style="display:inline-block; width:1em;"></span>
-        ${this._authors.map(
-          (author, idx) => html`
-          <span
-            class="author"
-            @click=${() => this._authorCallback(author.author_name)}
-            >${author.author_name} (${author.article_count})</span
-          >${idx < this._authors.length - 1 ? ', ' : ''}
-          `
-        )}
+          <span class="date">${this._date}</span>
+          <span style="display:inline-block; width:1em;"></span>
+          ${this._authors.map(
+            (author, idx) => html`
+            <span
+              class="author"
+              @click=${() => this._authorCallback(author.author_name)}
+              >${author.author_name} (${author.article_count})</span
+            >${idx < this._authors.length - 1 ? ', ' : ''}
+            `
+          )}
         </div>
-        <div class="line blurb">${this._blurb}</div>
-      </div>
+        <div style="height:1px; background:black; width:100%; margin:8px 0;"></div>
       </div>
     `;
   }

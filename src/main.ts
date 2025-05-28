@@ -125,8 +125,8 @@ function flashElement(element: HTMLElement) {
 
 function getImageUrlFromYearMonth (year: number, month: number): string {
     // Construct the image URL based on the year and month
-    return `https://foo.images.com/images/${year}_${month}.jpg`;
-};  
+    return `https://d1nm0ipwz8mc85.cloudfront.net/cover_${year}_${month}.jpg`;
+};
 
 // --------------------------- Date Slider ------------------------------
 class DoubleSlider extends HTMLElement {
@@ -483,6 +483,12 @@ class TermFrequencyChart extends HTMLElement {
                     datasets: [] // Add datasets dynamically
                 },
                 options: {
+                    onHover: (event) => {
+                        const canvas = event.native?.target as HTMLCanvasElement;
+                        if (canvas) {
+                            canvas.style.cursor = 'pointer';
+                        }
+                    },
                     onClick: (event, _elements) => {
                         if (!this.chart) return;
                         if (!event.x) return;
@@ -553,25 +559,10 @@ class TermFrequencyChart extends HTMLElement {
         }
     }
 
-    setLineIndexHighlight(index: number) {
-        // index is the index of the line that's currently being displayed at the top of the scrolling area.
-        if (!this.chart) return;
-        const dataset = this.chart.data.datasets[0];
-        if (!dataset) return;
-        let cumulativeLineCount = 0
-        let year = new Date().getFullYear();
-        for (let i = dataset.data.length - 1; i > 0; i--) {
-            cumulativeLineCount += dataset.data[i] as number;
-            if (cumulativeLineCount > index) {
-                this.activeIndex = i;
-                break;
-            }
-            year = year - 1;
-        }
-        if (this.chart) {
-            this.chart.update();
-        }
-        return year;
+    setYearHighlight(year: number) {
+        const index = year - 1857; // Adjust index to match the chart's x-axis labels
+        this.activeIndex = index;
+        this.chart?.update();
     }
 
     setTermsData(termDict: { [key: string]: number[] }) {
@@ -587,13 +578,22 @@ class TermFrequencyChart extends HTMLElement {
         let colorIndex = 0;
         for (const [term, counts] of Object.entries(termDict.results)) {
             const dataset: ChartDataset<'bar'> = {
-                label: term,
+                label: term ? ('Articles matching "' + term + '"') : 'All Articles, per Year',
                 data: counts as any as number[],
                 backgroundColor: function (context: any) {
                     const idx = context.dataIndex;
                     return idx === owner.activeIndex ? 'red' : colors[0];
                 }
             };
+            // Increase the font size of the legend label (dataset label)
+            if (owner.chart && owner.chart.options.plugins && owner.chart.options.plugins.legend) {
+                owner.chart.options.plugins.legend.labels = {
+                    ...owner.chart.options.plugins.legend.labels,
+                    font: {
+                        size: 18 // Set your desired font size here
+                    }
+                };
+            }
             if (this.chart) {
                 this.chart.data.labels = years;
                 this.chart.data.datasets.push(dataset);
@@ -638,13 +638,6 @@ class TermNavigator extends HTMLElement {
         this.yearThumbnailGallery = new YearThumbnailGallery();
         this.appendChild(this.yearThumbnailGallery);
         this.yearThumbnailGallery.id = 'year-thumbnail-gallery';
-        this.yearThumbnailGallery.year = '1930'; // Default year for the thumbnail gallery
-        this.yearThumbnailGallery.images = [
-            "https://cdn.theatlantic.com/thumbor/OyZIPEFgyOxxaHqgrTwnoZLQC-o=/0x0:2640x3800/374x539/media/img/issues/1930/04/01/original.jpg",
-            "https://cdn.theatlantic.com/thumbor/OyZIPEFgyOxxaHqgrTwnoZLQC-o=/0x0:2640x3800/374x539/media/img/issues/1930/04/01/original.jpg",
-            "https://cdn.theatlantic.com/thumbor/OyZIPEFgyOxxaHqgrTwnoZLQC-o=/0x0:2640x3800/374x539/media/img/issues/1930/04/01/original.jpg",
-            "https://cdn.theatlantic.com/thumbor/OyZIPEFgyOxxaHqgrTwnoZLQC-o=/0x0:2640x3800/374x539/media/img/issues/1930/04/01/original.jpg",
-        ];
         this.yearThumbnailGallery.addEventListener('thumbnail-hover', (event: any) => {
             const url = event.detail.src;
             const thumbnailBounds = event.detail.thumbnailBounds;
@@ -801,11 +794,17 @@ class TermNavigator extends HTMLElement {
                     'tabid',
                     getQueryTotal,
                     (scrollIndex: number) => { 
-                        const year = this.termFrequencyChart.setLineIndexHighlight(scrollIndex) || new Date().getFullYear();
-                        this.setGalleryYear(year.toString());
-                    }
-                );
-            }
+                        const yearQuery = JSON.parse(JSON.stringify(this.getQuery()));
+                        yearQuery.query = 'yearmonthofrecordindex'
+                        yearQuery.index = scrollIndex;
+                        getAllRecords(yearQuery, (result: any) => {
+                            const yearMonth = result.results;
+                            const year = yearMonth.year;
+                            this.termFrequencyChart.setYearHighlight(year);
+                            this.setGalleryYear(year.toString());
+                        });
+                    })
+                }
         });
     }
 
@@ -987,7 +986,7 @@ async function fetchSingle(url: string, callback: (response: any) => void) {
         if (!shouldExecuteFetchSingle(url, callback)) {
             return;
         }
-        console.log('Fetching:', url);
+        // console.log('Fetching:', url);
         // const startTime = Date.now();
         const response = await fetch(url, {
             method: 'GET',
@@ -996,7 +995,7 @@ async function fetchSingle(url: string, callback: (response: any) => void) {
             }
         });
         const jsonResponse = await response.json();
-        console.log('Fetch response:', jsonResponse);
+        // console.log('Fetch response:', jsonResponse);
         // const duration = Date.now() - startTime;
         // console.log('Fetch duration (' + url + '):', duration, 'ms');
         fetchSingleSucceeded(url, callback, jsonResponse);
