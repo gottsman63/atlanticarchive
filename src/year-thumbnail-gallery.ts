@@ -84,7 +84,7 @@ export class YearThumbnailGallery extends LitElement {
 
   render() {
     return html`
-      <div class="container">
+      <div class="container" style="justify-content: center;">
         <div class="year">${this.year}</div>
         <div class="thumbs">
           ${this.images.map((src, i) => html`
@@ -107,6 +107,7 @@ export class YearThumbnailGallery extends LitElement {
               @click=${() => this._onClick(i)}
             />
           `)}
+          <div class="year" style="margin-left: 1rem;">${this.year}</div>
         </div>
       </div>
     `;
