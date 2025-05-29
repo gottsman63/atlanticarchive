@@ -229,13 +229,14 @@ a:hover {
 /* Overlay styling */
 #cover-overlay {
   position: fixed;
-  top: 180px;
+  top: 110px;
   left: 100px;
   width: calc(100vw - 200px);
-  height: calc(100vh - 220px);
+  height: calc(100vh - 120px);
   display: flex;
   justify-content: center;
-  align-items: center;
+  /* align-items: flex-start;
+  align-items: center; */
   /* background-color: rgba(0, 0, 0, 0.5); semi-transparent background */
   z-index: 1000;
 }
