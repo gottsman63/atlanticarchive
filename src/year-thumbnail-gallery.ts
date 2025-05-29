@@ -32,48 +32,50 @@ export class YearThumbnailGallery extends LitElement {
     this.requestUpdate('images', old);
   }
 
-  static styles = css`
+static styles = css`
     :host {
-      display: block;
-      width: 100%;
-      /* you can override this in page CSS */
-      height: 100px;
-      box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        /* you can override this in page CSS */
+        height: 100px;
+        box-sizing: border-box;
     }
     .container {
-      display: flex;
-      align-items: center;
-      height: 100%;
-      overflow-x: auto;
+        display: flex;
+        align-items: center;
+        height: 100%;
+        overflow-x: auto;
     }
     .year {
-      flex: 0 0 auto;
-      margin-right: 1rem;
-      font-size: 1.2em;
-      font-weight: bold;
-      white-space: nowrap;
+        flex: 0 0 auto;
+        margin-right: 1rem;
+        font-size: 2.5em;
+        font-weight: bold;
+        white-space: nowrap;
     }
     .thumbs {
-      display: flex;
-      flex: 1 1 auto;
-      gap: 0.5rem;
-      align-items: center;
-      overflow-x: auto;
-      /* ensure thumbs container fills host height */
-      height: 100%;
+        display: flex;
+        flex: 1 1 auto;
+        gap: 0.5rem;
+        align-items: center;
+        overflow-x: auto;
+        /* ensure thumbs container fills host height */
+        height: 100%;
     }
     .thumb {
-      flex: 0 0 auto;
-      /* never taller than the container, but shrink if needed */
-      max-height: 100%;
-      height: auto;
-      width: auto;
-      object-fit: contain;
-      cursor: pointer;
-      user-select: none;
-      box-shadow: 0 4px 4px rgba(0, 0, 0, 0.5);
+        flex: 0 0 auto;
+        /* never taller than the container, but shrink if needed */
+        max-height: 100%;
+        height: auto;
+        width: auto;
+        object-fit: contain;
+        cursor: pointer;
+        user-select: none;
+        box-shadow: 0 4px 4px rgba(0, 0, 0, 0.5);
     }
-  `;
+`;
 
   protected willUpdate(changed: PropertyValues) {
     if (changed.has('images')) {

@@ -229,10 +229,10 @@ a:hover {
 /* Overlay styling */
 #cover-overlay {
   position: fixed;
-  top: 100px;
+  top: 180px;
   left: 100px;
   width: calc(100vw - 200px);
-  height: calc(100vh - 200px);
+  height: calc(100vh - 220px);
   display: flex;
   justify-content: center;
   align-items: center;
