@@ -92,7 +92,6 @@ static styles = css`
           ${this.images.map((src, i) => html`
             <img
               src=${src}
-              title="${this.extractMonthFromCoverUrl(src)}"
               class="thumb"
               style="display: block"
               @error=${(e: Event) => {
