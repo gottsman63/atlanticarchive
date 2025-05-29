@@ -148,7 +148,7 @@ static styles = css`
     }
     .tooltip {
         --sl-tooltip-font-size: 1.0em;
-        --sl-tooltip-max-width: 400px;
+        --sl-tooltip-max-width: 500px;
         --sl-tooltip-background-color: var(--sl-color-neutral-800, #374151);
         --sl-tooltip-text-color: var(--sl-color-neutral-0, #ffffff);
         --sl-tooltip-border-radius: 4px;

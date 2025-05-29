@@ -27,9 +27,10 @@ const fetchUrl = 'https://ocf23hr7gvdwnjvqjdxkyfn72q0krmpf.lambda-url.eu-west-1.
 
 const fetchUrls = [
     { url: 'https://7xadmewddfcppw5lweztbzlv2u0wxcvk.lambda-url.eu-west-1.on.aws/', region: 'Ireland', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
-    //   { url: 'https://ag7chsk5zm74er3oatpdh6j24m0koppw.lambda-url.us-east-2.on.aws/', region: 'Ohio', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
-    //   { url: 'https://73jo4qs6ly7d3yvmtau6ueh2vi0nwqwd.lambda-url.eu-west-2.on.aws/', region: 'London', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
-    //   { url: 'https://xfpv2livbazgnqjp4gfjc4rlia0pgfey.lambda-url.us-west-2.on.aws/', region: 'Oregon', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+    { url: 'https://7l7dxsu2m33pjnh6e62sfl54py0ixquy.lambda-url.us-west-2.on.aws/', region: 'Oregon', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+    { url: 'https://mmhwe4ilkqhhqb5efd3ecmsqy40pgfib.lambda-url.us-east-1.on.aws/', region: 'N. Virginia', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+    { url: 'https://2y674htvpcocgsrdjp2azmpspq0vioiq.lambda-url.us-east-2.on.aws/', region: 'Ohio', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
+    { url: 'https://cdgwrchh6zf25bztnf4xcltcqu0ulxqb.lambda-url.us-west-1.on.aws/', region: 'N. California', latency: Number.MAX_SAFE_INTEGER, timestamp: 0, crawltime: 0 },
 ];
 
 // let pendingQueries: { [key: string]: any } = {};
@@ -37,7 +38,7 @@ const blockSize = 25;
 const dataCallbackCache: { [key: string]: any } = {};
 // const cacheForGetAllRecords: { [key: string]: any } = {};
 let lastPingTestTime = 0;
-const pingIntervalSeconds = 1 * 60 * 1000; // 5 minutes
+const pingIntervalSeconds = 10 * 1000; 
 
 let MouseX = 0;
 let MouseY = 0;
@@ -1006,7 +1007,8 @@ async function fetchSingle(url: string, callback: (response: any) => void) {
 }
 
 function pingTest() {
-    const queryDict = { "query": "ping" }
+    updateTitleWithFetchUrl();
+    const queryDict = { "query": "ping", "random": Math.random().toString(36) };
     const queryString = new URLSearchParams(queryDict).toString();
     // const url = fetchUrl + '/request?' + queryString;
     for (let i = 0; i < fetchUrls.length; i++) {
@@ -1024,6 +1026,19 @@ function pingTest() {
             });
         } catch (error) {
             console.error(`Error fetching from ${fetchUrlObj.region}:`, error);
+        }
+    }
+}
+
+function updateTitleWithFetchUrl() {
+    const titleElement = document.querySelector('title');
+    if (titleElement) {
+        const currentUrl = getFetchUrl();
+        const fetchUrlObj = fetchUrls.find(urlObj => urlObj.url === currentUrl);
+        if (fetchUrlObj) {
+            titleElement.textContent = `Pelagic Archive - ${fetchUrlObj.region} (${fetchUrlObj.latency}ms)`;
+        } else {
+            titleElement.textContent = 'Pelagic Archive';
         }
     }
 }
