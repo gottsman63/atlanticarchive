@@ -51,8 +51,8 @@ static styles = css`
     .year {
         flex: 0 0 auto;
         margin-right: 1rem;
-        font-size: 2.5em;
-        font-weight: bold;
+        font-size: 3.0em;
+        font-weight: 900;
         white-space: nowrap;
     }
     .thumbs {

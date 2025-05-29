@@ -330,7 +330,7 @@ class SearchElement extends HTMLElement {
                     sessionStorage.setItem('searchString', '');
                     const element = this.querySelector('#search-string') as HTMLInputElement;
                     element.value = '';
-                    this.setResetAuthorButtonVisibility();
+                    // this.setResetAuthorButtonVisibility();
                     this.changeCallback();
                 }
             }
@@ -405,6 +405,18 @@ class SearchElement extends HTMLElement {
             // this.tomSelect.refreshOptions(true);
             this.tomSelect.load(s);
             this.tomSelect.open();
+            if (this.tomSelect.dropdown_content && this.tomSelect.dropdown_content.firstChild) {
+                const firstOption = this.tomSelect.dropdown_content.firstChild as HTMLElement;
+                if (firstOption && typeof firstOption.click === 'function') {
+                    setTimeout(() => firstOption.click(), 0);
+                }
+            }
+            // Immediately close the dropdown to allow future mouse clicks but not leave it open
+            // Try blurring the input to close the dropdown without clearing the selection
+            const input = this.tomSelect.control_input;
+            if (input && typeof input.blur === 'function') {
+                setTimeout(() => input.blur(), 100);
+            }
             // this.tomSelect.focus();
             // this.tomSelect.close();
             this.changeCallback();
