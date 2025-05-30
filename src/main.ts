@@ -250,7 +250,7 @@ class SearchElement extends HTMLElement {
         <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
           <select id="author-select" autocorrect="off" placeholder="Search for an author"></select>
           <sl-button id="reset-author" variant="primary" size="medium" pill>Show all Articles</sl-button>
-          <sl-input id="search-string" placeholder="Search for words or (in quotes) a phrase" size="large" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
+          <sl-input id="search-string" placeholder="Search for words or (&quot;in quotes&quot;) a phrase" size="large" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
         </div>
           `;
 
@@ -591,7 +591,7 @@ class TermFrequencyChart extends HTMLElement {
         let colorIndex = 0;
         for (const [term, counts] of Object.entries(termDict.results)) {
             const dataset: ChartDataset<'bar'> = {
-                label: (term ? ('Counts of Articles Containing "' + term + '"') : 'Article Counts by Year') +   " (Click a Bar to Jump to a Year's Articles)",
+                label: (term ? ('Counts of Articles Containing "' + term + '"') : 'Article Counts by Year') +   " (Click a Bar to Jump to that Year's Covers & Articles)",
                 data: counts as any as number[],
                 backgroundColor: function (context: any) {
                     const idx = context.dataIndex;
@@ -604,7 +604,7 @@ class TermFrequencyChart extends HTMLElement {
                     ...owner.chart.options.plugins.legend.labels,
                     font: {
                         size: 18, // Set your desired font size here
-                        weight: 'bold', // Optional: make the font bold
+                        weight: 'bold' // Optional: make the font bold
                     }
                 };
             }

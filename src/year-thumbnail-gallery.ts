@@ -50,10 +50,15 @@ static styles = css`
     }
     .year {
         flex: 0 0 auto;
+        color: red;
         margin-right: 1rem;
-        font-size: 3.0em;
+        font: var(sl-font-heading);
+        font-size: 2.5em;
         font-weight: 900;
         white-space: nowrap;
+        text-shadow:
+          2px 2px 6px rgba(0,0,0,0.5),
+          0 2px 4px rgba(0,0,0,0.3);
     }
     .thumbs {
         display: flex;

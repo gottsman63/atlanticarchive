@@ -90,6 +90,7 @@ static styles = css`
     }
     .title {
         color: var(--sl-color-primary-600, #3b82f6);
+        font: var(--sl-font-sans);
         font-size: 1.2em;
         font-weight: bold;
         cursor: pointer;
@@ -99,6 +100,7 @@ static styles = css`
         text-decoration: underline;
     }
     .date {
+        font: var(--sl-font-sans);
         color: var(--sl-color-danger-600, #ff0000);
         font-weight: bold;
     }
@@ -120,6 +122,7 @@ static styles = css`
     }
     .author {
         text-decoration: none;
+        var(--sl-font-sans)
         font-weight: bold;
         cursor: pointer;
         white-space: nowrap;
@@ -129,6 +132,7 @@ static styles = css`
     }
     .blurb {
         font-style: italic;
+        var(--sl-font-sans)
         font-size: 1.0em;
         font-weight: bold;
         color: var(--sl-color-neutral-600, #6b7280);
