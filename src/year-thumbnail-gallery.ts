@@ -39,7 +39,7 @@ static styles = css`
         align-items: center;
         width: 100%;
         /* you can override this in page CSS */
-        height: 100px;
+        height: 90px;
         box-sizing: border-box;
     }
     .container {

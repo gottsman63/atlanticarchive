@@ -230,7 +230,7 @@ a:hover {
 /* Overlay styling */
 #cover-overlay {
   position: fixed;
-  top: 110px;
+  top: 125px;
   left: 100px;
   width: calc(100vw - 200px);
   height: calc(100vh - 120px);
