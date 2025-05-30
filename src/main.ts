@@ -249,8 +249,8 @@ class SearchElement extends HTMLElement {
         this.innerHTML = `
         <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
           <select id="author-select" autocorrect="off" placeholder="Author Name...."></select>
-          <sl-button id="reset-author" variant="primary" size="medium" pill>Show all Documents</sl-button>
-          <sl-input id="search-string" placeholder="Words in any order" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
+          <sl-button id="reset-author" variant="primary" size="medium" pill>Show all Articles</sl-button>
+          <sl-input id="search-string" placeholder="Words or (in quotes) phrases" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
         </div>
           `;
 
@@ -591,7 +591,7 @@ class TermFrequencyChart extends HTMLElement {
         let colorIndex = 0;
         for (const [term, counts] of Object.entries(termDict.results)) {
             const dataset: ChartDataset<'bar'> = {
-                label: term ? ('Counts of Articles Containing "' + term + '"') : 'Article Count, per Year',
+                label: (term ? ('Counts of Articles Containing "' + term + '"') : 'Article Counts by Year') +   " (Click a Bar to Jump to a Year)",
                 data: counts as any as number[],
                 backgroundColor: function (context: any) {
                     const idx = context.dataIndex;
@@ -603,7 +603,8 @@ class TermFrequencyChart extends HTMLElement {
                 owner.chart.options.plugins.legend.labels = {
                     ...owner.chart.options.plugins.legend.labels,
                     font: {
-                        size: 18 // Set your desired font size here
+                        size: 18, // Set your desired font size here
+                        weight: 'bold', // Optional: make the font bold
                     }
                 };
             }
@@ -615,6 +616,7 @@ class TermFrequencyChart extends HTMLElement {
                         ...this.chart.options.scales.x.ticks,
                         font: {
                             size: 16, // Set the desired font size here
+                            weight: 900, // Optional: make the font bold
                         },
                     };
                 }

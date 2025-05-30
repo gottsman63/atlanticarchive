@@ -130,6 +130,7 @@ static styles = css`
     .blurb {
         font-style: italic;
         font-size: 1.0em;
+        font-weight: bold;
         color: var(--sl-color-neutral-600, #6b7280);
         line-height: 1.2;
         overflow-x: auto;

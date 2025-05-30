@@ -7,7 +7,7 @@
   border-radius:     var(--sl-border-radius-pill);
   font-family:       var(--sl-font-sans);
   color:             var(--sl-text-primary);
-  font-size:         var(--sl-font-size-medium);
+  font-size:         var(--sl-font-size-large);
   width:          300px;
 }
 
@@ -42,14 +42,15 @@
   border-radius:  var(--sl-border-radius-medium);
   box-shadow:     var(--sl-shadow-large);
   font-family:    var(--sl-font-sans);
-  font-size:    var(--sl-font-size-medium);
-  max-height:     200px;
+  font-size:    var(--sl-font-size-large);
+  max-height:     200px; 
   overflow-y:     auto;
 }
 
 /* 6) Each row in the dropdown */
 .ts-wrapper .ts-option {
   padding: var(--sl-spacing-x-small) var(--sl-spacing-small);
+  font-size: var(--sl-font-size-large);
 }
 
 .ts-wrapper .ts-option.ts-highlight,
