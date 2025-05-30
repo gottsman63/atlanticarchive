@@ -10,6 +10,12 @@
   font-size:         var(--sl-font-size-large);
   width:          300px;
 }
+.ts-wrapper .ts-control input::placeholder {
+    font-weight: normal;
+    font-size: 1.4em;
+    font-family: var(--sl-font-sans);  /* Use a sans-serif font */
+    color: #333;                       /* A darker color */
+}
 
 /* 2) Focus state */
 .ts-wrapper .ts-control.ts-focus {

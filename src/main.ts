@@ -250,7 +250,7 @@ class SearchElement extends HTMLElement {
         <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
           <select id="author-select" autocorrect="off" placeholder="Author Name...."></select>
           <sl-button id="reset-author" variant="primary" size="medium" pill>Show all Articles</sl-button>
-          <sl-input id="search-string" placeholder="Words or (in quotes) a phrase" size="medium" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
+          <sl-input id="search-string" placeholder="Search for words or (in quotes) a phrase" size="large" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
         </div>
           `;
 
