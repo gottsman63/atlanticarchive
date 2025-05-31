@@ -249,7 +249,7 @@ class SearchElement extends HTMLElement {
         this.innerHTML = `
         <div class="jviewer-search-bar" style="display: flex; justify-content: center;">
           <select id="author-select" autocorrect="off" placeholder="Search for an author"></select>
-          <sl-button id="reset-author" variant="primary" size="medium" pill>Show all Articles</sl-button>
+          <sl-button id="reset-author" variant="primary" size="medium" pill>Clear Filters (Show all Articles)</sl-button>
           <sl-input id="search-string" placeholder="Search for words or (&quot;in quotes&quot;) a phrase" size="large" pill clearable autocorrect="off" style="width: 50%;"></sl-input>
         </div>
           `;
@@ -591,9 +591,18 @@ class TermFrequencyChart extends HTMLElement {
         let colorIndex = 0;
         for (const [term, counts] of Object.entries(termDict.results)) {
             const dataset: ChartDataset<'bar'> = {
-                label: (term ? ('Counts of Articles Containing "' + term + '"') : 'Article Counts by Year') +   " (Click a Bar to Jump to that Year's Covers & Articles)",
+                label: (term ? ('Counts of Articles Containing "' + term + '"') : 'Article Counts by Year') +   " (Click a Bar to Scroll to that Year's Covers & Articles)",
                 data: counts as any as number[],
                 backgroundColor: function (context: any) {
+                    const idx = context.dataIndex;
+                    return idx === owner.activeIndex ? 'red' : colors[0];
+                },
+                hoverBackgroundColor: function (context: any) {
+                    // If this bar is hovered, context.active will be true
+                    if (context.active) {
+                        return '#ff1744'; // bright color for hovered bar
+                    }
+                    // Otherwise, use the same logic as backgroundColor
                     const idx = context.dataIndex;
                     return idx === owner.activeIndex ? 'red' : colors[0];
                 }

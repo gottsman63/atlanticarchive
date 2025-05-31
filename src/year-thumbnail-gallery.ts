@@ -72,13 +72,12 @@ static styles = css`
     .thumb {
         flex: 0 0 auto;
         /* never taller than the container, but shrink if needed */
-        max-height: 100%;
+        max-height: 95%;
         height: auto;
         width: auto;
         object-fit: contain;
         cursor: pointer;
         user-select: none;
-        box-shadow: 0 4px 4px rgba(0, 0, 0, 0.5);
     }
 `;
 
@@ -98,7 +97,7 @@ static styles = css`
             <img
               src=${src}
               class="thumb"
-              style="display: block"
+              style="display: block; border: 1px solid black; box-shadow: 0 4px 4px rgba(0,0,0,0.5);"
               @error=${(e: Event) => {
                 const img = e.currentTarget as HTMLImageElement;
                 img.style.display = 'none';
@@ -113,7 +112,6 @@ static styles = css`
               @click=${() => this._onClick(i)}
             />
           `)}
-          <div class="year" style="margin-left: 1rem;">${this.year}</div>
         </div>
       </div>
     `;

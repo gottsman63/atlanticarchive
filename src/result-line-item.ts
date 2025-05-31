@@ -53,6 +53,7 @@ static styles = css`
         background: #f0f0f0;
         display: block;
         box-shadow: 0 4px 4px rgba(0, 0, 0, 0.5);
+        border: 1px solid black;
     }
     .text {
         display: flex;
@@ -122,8 +123,7 @@ static styles = css`
     }
     .author {
         text-decoration: none;
-        var(--sl-font-sans)
-        font-weight: bold;
+        font: var(--sl-font-sans);
         cursor: pointer;
         white-space: nowrap;
     }
@@ -153,10 +153,9 @@ static styles = css`
     }
     .tooltip {
         --sl-tooltip-font-size: 1.0em;
-        --sl-tooltip-max-width: 500px;
         --sl-tooltip-background-color: var(--sl-color-neutral-800, #374151);
         --sl-tooltip-text-color: var(--sl-color-neutral-0, #ffffff);
-        --sl-tooltip-border-radius: 4px;
+        --sl-tooltip-border-radius: 8px;
         --sl-tooltip-padding: 8px;
         --sl-tooltip-box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
@@ -172,13 +171,13 @@ static styles = css`
         alt="Thumbnail"
         @click=${() => this._coverSelectCallback(this._imageUrl)}
         @mouseenter=${() => {
-          const element = this.renderRoot.querySelector<HTMLImageElement>('#thumbnail');
-          const bounds = element?.getBoundingClientRect() || null;
-          this._coverHoverCallback(this._imageUrl, bounds);
+        const element = this.renderRoot.querySelector<HTMLImageElement>('#thumbnail');
+        const bounds = element?.getBoundingClientRect() || null;
+        this._coverHoverCallback(this._imageUrl, bounds);
         }}
         @mouseleave=${() => {
-            // this._coverHoverCallback('', this.getElementsByClassName('thumbnail')[0]?.getBoundingClientRect() || null);
-            }
+          // this._coverHoverCallback('', this.getElementsByClassName('thumbnail')[0]?.getBoundingClientRect() || null);
+        }
         }
       />
       <div class="text">
@@ -187,23 +186,24 @@ static styles = css`
         <span style="display:inline-block; width:1em;"></span>
         <span class="snippet"> ${unsafeHTML(this._snippet)}</span>
         </div>
-        <sl-tooltip  class="tooltip" content="${this._blurb}">
-          <div class="line blurb">${this._blurb}</div>
+        <sl-tooltip class="tooltip" content="${this._blurb}" hoist no-arrow>
+        <div class="line blurb">${this._blurb}</div>
         </sl-tooltip>
         <div class="line">
-          <span class="date">${this._date}</span>
-          <span style="display:inline-block; width:1em;"></span>
-          ${this._authors.map(
-            (author, idx) => html`
-            <span
-              class="author"
-              @click=${() => this._authorCallback(author.author_name)}
-              >${author.author_name} (${author.article_count})</span
-            >${idx < this._authors.length - 1 ? ', ' : ''}
-            `
-          )}
+        <span class="date">${this._date}</span>
+        <span style="display:inline-block; width:1em;"></span>
+        ${this._authors.map(
+          (author, idx) => html`
+          <span
+            class="author"
+            @click=${() => this._authorCallback(author.author_name)}
+            >${author.author_name} (${author.article_count})</span
+          >${idx < this._authors.length - 1 ? ', ' : ''}
+          `
+        )}
         </div>
-        <div style="height:1px; background:gray; width:100%; margin:8px 0;"></div>
+        <div style="height:1px; background:gray; margin:8px 0; width:100vw; position:relative; left:50%; transform:translateX(-50%);"></div>
+      </div>
       </div>
     `;
   }
